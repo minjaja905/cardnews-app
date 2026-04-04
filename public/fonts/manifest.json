@@ -1,0 +1,38 @@
+[
+  {
+    "id": "pretendard",
+    "name": "Pretendard",
+    "category": "sans-serif",
+    "title": { "file": "Pretendard-Bold.otf", "weight": "700" },
+    "body":  { "file": "Pretendard-Regular.otf", "weight": "400" },
+    "medium":{ "file": "Pretendard-Medium.otf", "weight": "500" }
+  },
+  {
+    "id": "bookkgothic",
+    "name": "부크크고딕",
+    "category": "sans-serif",
+    "title": { "file": "BookkGothic_Bold.ttf",  "weight": "700" },
+    "body":  { "file": "BookkGothic_Light.ttf", "weight": "300" }
+  },
+  {
+    "id": "bookkMyungjo",
+    "name": "부크크명조",
+    "category": "serif",
+    "title": { "file": "BookkMyungjo_Bold.ttf",  "weight": "700" },
+    "body":  { "file": "BookkMyungjo_Light.ttf", "weight": "300" }
+  },
+  {
+    "id": "bmkkubulim",
+    "name": "BM쿠쿠림",
+    "category": "handwriting",
+    "title": { "file": "BMKkubulim.otf", "weight": "400" },
+    "body":  { "file": "BMKkubulim.otf", "weight": "400" }
+  },
+  {
+    "id": "okdandan",
+    "name": "오케이단단",
+    "category": "display",
+    "title": { "file": "OkDanDan-Bold.ttf", "weight": "700" },
+    "body":  { "file": "OkDanDan-Bold.ttf", "weight": "700" }
+  }
+]
