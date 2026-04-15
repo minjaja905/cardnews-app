@@ -8,6 +8,8 @@ const defaultDate = () => {
 
 // Pretendard = 기본 fontDef (manifest 로드 전 fallback)
 const DEFAULT_FONT_DEF = { id: 'pretendard', title: { weight: '700' }, body: { weight: '400' } };
+const PORTFOLIO_FONT_DEF = { id: 'Yang organization Gothic Bold', title: { weight: '700' }, body: { weight: '700' } };
+const PORTFOLIO_STYLE = { themeKey: 'indigo', fontDef: PORTFOLIO_FONT_DEF };
 
 export const useAppStore = create(
   persist(
@@ -68,7 +70,7 @@ export const useAppStore = create(
 
       // ── 프로젝트 시작 ─────────────────────────────────────────────────────
       startProject: (mode) =>
-        set({
+        set((state) => ({
           page: mode,
           step: 1,
           topic: '',
@@ -82,7 +84,8 @@ export const useAppStore = create(
           selectedVar: 0,
           params: null,
           images: {},
-        }),
+          style: mode === 'portfolio' ? PORTFOLIO_STYLE : state.style,
+        })),
 
       reset: () =>
         set({

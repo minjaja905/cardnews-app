@@ -34,5 +34,12 @@
     "category": "display",
     "title": { "file": "OkDanDan-Bold.ttf", "weight": "700" },
     "body":  { "file": "OkDanDan-Bold.ttf", "weight": "700" }
+  },
+  {
+    "id": "Yang organization Gothic Bold",
+    "name": "양재오거니제이션",
+    "category": "sans-serif",
+    "title": { "file": "yangfont02.ttf", "weight": "700" },
+    "body":  { "file": "yangfont02.ttf", "weight": "700" }
   }
 ]

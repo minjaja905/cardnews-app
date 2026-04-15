@@ -1,6 +1,7 @@
-// Claude API 연동 — 밈/일반 카드뉴스 텍스트 3-variation 생성
+// Claude API 연동 — 밈/일반/포트폴리오 카드뉴스 텍스트 3-variation 생성
 import { MEME_SYSTEM_PROMPT } from '../data/memeRules';
 import { GENERAL_SYSTEM_PROMPT } from '../data/generalRules';
+import { PORTFOLIO_SYSTEM_PROMPT } from '../data/portfolioRules';
 
 const API_KEY = import.meta.env.VITE_CLAUDE_API_KEY;
 const MODEL = 'claude-sonnet-4-6';
@@ -117,6 +118,27 @@ ${details ? `상세 내용: ${details}` : ''}
 반드시 JSON만 반환하고, 마크다운 코드블록 없이 응답하세요.`;
 
   const result = await callClaude(GENERAL_SYSTEM_PROMPT, userMsg);
+
+  if (!result.variations || !Array.isArray(result.variations)) {
+    throw new Error('AI 응답 구조 오류 — variations 배열을 찾을 수 없습니다.');
+  }
+  return result.variations;
+}
+
+// ── 포트폴리오 카드뉴스 3-variation 생성 ──────────────────────────────────────
+export async function generatePortfolioVariations({ part, projectName, problem, solution, impacts, tools, seriesNum }) {
+  const userMsg = `파트: ${part || '업무 생산성'}
+프로젝트명: "${projectName}"
+시리즈 번호: ${seriesNum || '01'}
+Problem: ${problem}
+Solution: ${solution}
+Impact: ${(impacts || []).join(' / ')}
+사용 도구: ${(tools || []).join(', ')}
+
+위 포트폴리오 프로젝트로 인스타그램 카드뉴스 6장 텍스트를 3가지 스타일(A-임팩트, B-스토리, C-기술어필)로 생성해주세요.
+반드시 JSON만 반환하고, 마크다운 코드블록 없이 응답하세요.`;
+
+  const result = await callClaude(PORTFOLIO_SYSTEM_PROMPT, userMsg);
 
   if (!result.variations || !Array.isArray(result.variations)) {
     throw new Error('AI 응답 구조 오류 — variations 배열을 찾을 수 없습니다.');

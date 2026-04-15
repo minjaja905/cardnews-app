@@ -21,6 +21,16 @@ const MODES = [
     color: '#6366F1',
     grad: 'from-[#C7D2FE] to-[#F5F3FF]',
   },
+  {
+    key: 'portfolio',
+    emoji: '🗂',
+    title: '포트폴리오 카드뉴스',
+    subtitle: '시스템화 시리즈',
+    desc: '내 작업을 SNS에서 정기 발행\n포폴은 줘야 읽히지만 카드뉴스는 찾아옵니다',
+    tags: ['퍼스널 브랜딩', '프로젝트 쇼케이스', '시스템화 기록'],
+    color: '#F59E0B',
+    grad: 'from-[#FCD34D] to-[#FFFBEB]',
+  },
 ];
 
 export default function Home() {

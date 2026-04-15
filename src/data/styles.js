@@ -6,6 +6,7 @@ export const COLOR_THEMES = {
   blue:   { key: 'blue',   label: '블루',  primary: '#3B82F6', gradStart: '#93C5FD', gradMid: '#DBEAFE' },
   gold:   { key: 'gold',   label: '골드',  primary: '#F59E0B', gradStart: '#FCD34D', gradMid: '#FEF3C7' },
   mono:   { key: 'mono',   label: '모노',  primary: '#374151', gradStart: '#D1D5DB', gradMid: '#F3F4F6' },
+  indigo: { key: 'indigo', label: '인디고', primary: '#6366F1', gradStart: '#C7D2FE', gradMid: '#EEF2FF' },
 };
 
 // SVG 문자열에 테마 색상 적용 (post-process)
