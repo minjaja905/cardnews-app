@@ -68,6 +68,10 @@ export const useAppStore = create(
       images: {},
       setImage: (key, val) => set((state) => ({ images: { ...state.images, [key]: val } })),
 
+      // ── 커버 배경 타입 ─────────────────────────────────────────────────────
+      coverType: 'color', // 'color' | 'photo'
+      setCoverType: (v) => set({ coverType: v }),
+
       // ── 프로젝트 시작 ─────────────────────────────────────────────────────
       startProject: (mode) =>
         set((state) => ({
@@ -84,6 +88,7 @@ export const useAppStore = create(
           selectedVar: 0,
           params: null,
           images: {},
+          coverType: 'color',
           style: mode === 'portfolio' ? PORTFOLIO_STYLE : state.style,
         })),
 
@@ -101,6 +106,7 @@ export const useAppStore = create(
           selectedVar: 0,
           params: null,
           images: {},
+          coverType: 'color',
         }),
     }),
     {

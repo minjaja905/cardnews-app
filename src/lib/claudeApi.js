@@ -146,6 +146,168 @@ Impact: ${(impacts || []).join(' / ')}
   return result.variations;
 }
 
+// ── 포트폴리오 줄글 자동 파싱 ─────────────────────────────────────────────────
+export async function parsePortfolioText(rawText) {
+  const systemPrompt = `당신은 포트폴리오 텍스트 파싱 전문가입니다.
+사용자가 노션 등에서 복붙한 포트폴리오 텍스트를 읽고, 카드뉴스 제작에 필요한 구조화된 정보를 추출합니다.
+반드시 아래 JSON 형식만 반환하고, 마크다운 코드블록 없이 응답하세요.`;
+
+  const userMsg = `아래 포트폴리오 텍스트에서 정보를 추출해주세요:
+
+${rawText}
+
+다음 JSON 형식으로 반환하세요:
+{
+  "projectName": "프로젝트명 (핵심만, 20자 이내)",
+  "problem": "Problem 내용 요약 (2-3문장)",
+  "solution": "Solution 내용 요약 (2-3문장)",
+  "impacts": ["임팩트1 (간결하게)", "임팩트2", "임팩트3"],
+  "tools": ["도구1", "도구2", "도구3"]
+}`;
+
+  const result = await callClaude(systemPrompt, userMsg);
+  return result;
+}
+
+// ── plain text 응답용 헬퍼 ────────────────────────────────────────────────────
+async function callClaudeText(systemPrompt, userMsg, retries = 2) {
+  if (!API_KEY) throw new Error('VITE_CLAUDE_API_KEY 환경변수가 설정되지 않았습니다.');
+
+  const res = await fetch('https://api.anthropic.com/v1/messages', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'x-api-key': API_KEY,
+      'anthropic-version': '2023-06-01',
+      'anthropic-dangerous-direct-browser-access': 'true',
+    },
+    body: JSON.stringify({
+      model: MODEL,
+      max_tokens: 1024,
+      system: systemPrompt,
+      messages: [{ role: 'user', content: userMsg }],
+    }),
+  });
+
+  if (res.status === 529 || res.status === 503) {
+    if (retries > 0) {
+      await new Promise((r) => setTimeout(r, 3000));
+      return callClaudeText(systemPrompt, userMsg, retries - 1);
+    }
+    throw new Error('Claude 서버가 혼잡합니다. 잠시 후 다시 시도해주세요.');
+  }
+
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err?.error?.message || `API 오류 ${res.status}`);
+  }
+
+  const data = await res.json();
+  return (data.content[0]?.text || '').trim();
+}
+
+// ── 이미지 → 포트폴리오 정보 추출 (Vision) ───────────────────────────────────
+export async function parseImageToPortfolioInfo(base64, mediaType) {
+  if (!API_KEY) throw new Error('VITE_CLAUDE_API_KEY 환경변수가 설정되지 않았습니다.');
+
+  const res = await fetch('https://api.anthropic.com/v1/messages', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'x-api-key': API_KEY,
+      'anthropic-version': '2023-06-01',
+      'anthropic-dangerous-direct-browser-access': 'true',
+    },
+    body: JSON.stringify({
+      model: MODEL,
+      max_tokens: 1024,
+      system: `당신은 포트폴리오 카드뉴스 이미지를 분석하는 전문가입니다.
+카드뉴스 이미지에서 프로젝트 정보를 추출하여 JSON으로 반환합니다.
+반드시 JSON만 반환하고, 마크다운 코드블록 없이 응답하세요.`,
+      messages: [{
+        role: 'user',
+        content: [
+          {
+            type: 'image',
+            source: { type: 'base64', media_type: mediaType, data: base64 },
+          },
+          {
+            type: 'text',
+            text: `이 카드뉴스 이미지를 분석해서 아래 JSON 형식으로 정보를 추출해주세요.
+텍스트가 일부만 보여도 최대한 파악해주세요.
+
+{
+  "seriesNum": "시리즈 번호 (숫자만, 예: 01)",
+  "projectName": "프로젝트명",
+  "part": "업무 생산성 또는 생활 생산성",
+  "problem": "문제 상황 요약",
+  "solution": "해결 방법 요약",
+  "impacts": ["성과1", "성과2", "성과3"],
+  "tools": ["도구1", "도구2"]
+}
+
+파악하기 어려운 항목은 빈 문자열이나 빈 배열로 두세요.`,
+          },
+        ],
+      }],
+    }),
+  });
+
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err?.error?.message || `API 오류 ${res.status}`);
+  }
+
+  const data = await res.json();
+  const raw = data.content[0]?.text || '';
+  const match = raw.match(/\{[\s\S]*\}/);
+  if (!match) throw new Error('이미지 분석 실패');
+  return JSON.parse(match[0]);
+}
+
+// ── 포트폴리오 인스타 피드 글 생성 ────────────────────────────────────────────
+export async function generatePortfolioFeed({ seriesNum, projectName, part, problem, solution, impacts, tools }) {
+  const systemPrompt = `당신은 인스타그램 피드 카피라이터입니다.
+@minjaja.pdf 계정의 '시스템화 시리즈' 피드 글을 작성합니다.
+2030 여성 팔로워를 타깃으로, 저장욕구를 자극하는 실용적이고 공감되는 문체로 씁니다.
+
+글쓰기 원칙:
+- 구어체, 부드럽게, 너무 딱딱하지 않게
+- 첫 문장은 짧고 임팩트 있게 — 스크롤을 멈추게
+- 본문은 프로젝트 배경·과정을 자연스럽게
+- 마지막엔 독자가 써볼 수 있는 활용 포인트 or 공감 마무리
+- 이모지 최소화 (없어도 됨)
+
+반드시 아래 형식 그대로 출력하세요. 형식 외 다른 말 없이 피드 글만 출력:
+
+[시스템화 {N}] {제목}
+
+{훅 — 1문장}
+
+{본문 — 2~3문장}
+
+{활용 포인트 or 마무리 — 1~2문장}
+-
+@minjaja.pdf
+팔로우하고 {파트}✦
+-
+{#태그1 #태그2 #태그3 #태그4 #태그5}`;
+
+  const partLabel = part === '업무 생산성' ? '업무 생산성 높이기' : '생활 생산성 높이기';
+
+  const userMsg = `시리즈 번호: ${seriesNum || '01'}
+프로젝트명: ${projectName}
+파트: ${partLabel}
+문제: ${problem}
+해결: ${solution}
+성과: ${(impacts || []).filter(Boolean).join(' / ')}
+사용 도구: ${(tools || []).join(', ')}
+
+위 내용으로 인스타그램 피드 글을 작성해주세요.`;
+
+  return callClaudeText(systemPrompt, userMsg);
+}
+
 // ── 하위 호환 (기존 코드에서 사용하는 경우) ────────────────────────────────────
 export async function generateDraft({ memeName, memoContext }) {
   const vars = await generateMemeVariations({ topic: memeName, details: memoContext });

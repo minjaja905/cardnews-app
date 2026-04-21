@@ -1,6 +1,12 @@
 // 포트폴리오 카드뉴스 SVG 생성 — 퍼스널 브랜딩 스타일 (센터 레이아웃)
 // 1080 × 1350 px (인스타그램 4:5)
 
+let _fontStyle = '';
+
+export function setPortfolioFontStyle(style) {
+  _fontStyle = style || '';
+}
+
 function escXml(str) {
   return String(str || '')
     .replace(/&/g, '&amp;')
@@ -10,8 +16,10 @@ function escXml(str) {
 }
 
 function svgWrap(body, extraDefs = '') {
+  const fontBlock = _fontStyle ? `<style>${_fontStyle}</style>` : '';
   return `<svg width="1080" height="1350" viewBox="0 0 1080 1350" fill="none"
      xmlns="http://www.w3.org/2000/svg">
+  ${fontBlock}
   <defs>
     <filter id="gshdw" x="-5%" y="-5%" width="110%" height="110%">
       <feDropShadow dx="0" dy="3" stdDeviation="10" flood-color="black" flood-opacity="0.45"/>
@@ -46,7 +54,7 @@ function darkBg(id) {
 
 // ── 공통: 핸들 (@minjaja.pdf) ─────────────────────────────────────────────────
 function handle() {
-  return `<text x="60" y="76" font-family="'Apple SD Gothic Neo',sans-serif" font-weight="300"
+  return `<text x="60" y="76" font-family="'ef_diary',sans-serif" font-weight="300"
     font-size="26" fill="white" fill-opacity="0.45">@minjaja.pdf</text>`;
 }
 
@@ -59,7 +67,7 @@ function partBadge(part) {
     fill="#3ECFB2" fill-opacity="0.15"/>
   <rect x="${x}" y="52" width="${w}" height="40" rx="20"
     fill="none" stroke="#3ECFB2" stroke-opacity="0.50" stroke-width="1.5"/>
-  <text x="${x + w / 2}" y="78" font-family="'Apple SD Gothic Neo',sans-serif" font-weight="300"
+  <text x="${x + w / 2}" y="78" font-family="'ef_diary',sans-serif" font-weight="300"
     font-size="20" fill="#3ECFB2" text-anchor="middle">${escXml(part)}</text>`;
 }
 
@@ -115,7 +123,7 @@ function bodyText(text, y, size = 32, lineH = 48, opacity = 0.65) {
     .split('\n').map(l => l.trim()).filter(Boolean).slice(0, 3);
   if (!lines.length) return '';
   return `<text x="540" y="${y}" text-anchor="middle"
-    font-family="'Apple SD Gothic Neo',sans-serif" font-weight="300"
+    font-family="'ef_diary',sans-serif" font-weight="300"
     font-size="${size}" fill="white" fill-opacity="${opacity}">
     ${lines.map((l, i) => `<tspan x="540" dy="${i === 0 ? '0' : lineH}">${escXml(l)}</tspan>`).join('')}
   </text>`;
@@ -124,7 +132,7 @@ function bodyText(text, y, size = 32, lineH = 48, opacity = 0.65) {
 // ── 공통: 포인트/임팩트 아이템 (왼쪽 정렬 유지 — 가독성) ──────────────────────
 function bulletItem(text, y) {
   return `<rect x="100" y="${y}" width="4" height="40" rx="2" fill="#3ECFB2" fill-opacity="0.80"/>
-  <text x="124" y="${y + 29}" font-family="'Apple SD Gothic Neo',sans-serif" font-weight="300"
+  <text x="124" y="${y + 29}" font-family="'ef_diary',sans-serif" font-weight="300"
     font-size="30" fill="white" fill-opacity="0.88">${escXml(text)}</text>`;
 }
 
@@ -158,7 +166,7 @@ function toolBadges(tools, y0 = 800, lineH = 58, gap = 12) {
         fill="#3ECFB2" fill-opacity="0.12"/>
       <rect x="${x}" y="${y}" width="${w}" height="44" rx="22"
         fill="none" stroke="#3ECFB2" stroke-opacity="0.38" stroke-width="1.5"/>
-      <text x="${x + w / 2}" y="${y + 28}" font-family="'Apple SD Gothic Neo',sans-serif" font-weight="300"
+      <text x="${x + w / 2}" y="${y + 28}" font-family="'ef_diary',sans-serif" font-weight="300"
         font-size="21" fill="#3ECFB2" text-anchor="middle">${escXml(tool)}</text>`;
       x += w + gap;
     }
@@ -168,44 +176,59 @@ function toolBadges(tools, y0 = 800, lineH = 58, gap = 12) {
 
 // ── 공통: 다음 페이지 힌트 ────────────────────────────────────────────────────
 function nextHint() {
-  return `<text x="1020" y="1308" font-family="'Apple SD Gothic Neo',sans-serif" font-weight="300"
+  return `<text x="1020" y="1308" font-family="'ef_diary',sans-serif" font-weight="300"
     font-size="26" fill="white" fill-opacity="0.42" text-anchor="end">→ 다음 페이지로</text>`;
 }
 
-// ── 참고 이미지 (배경 아님 — 인셋 사진) ──────────────────────────────────────
-function referenceImg(image, cardId, y = 230, w = 820, h = 280) {
+// ── 전체 배경 이미지 (커버/아웃트로용) ────────────────────────────────────────
+function bgImage(image, cardId, scale = 1, offsetY = 0) {
+  if (!image) return '';
+  const iw = Math.round(1080 * scale);
+  const ih = Math.round(1350 * scale);
+  const ix = Math.round((1080 - iw) / 2);
+  const iy = Math.round((1350 - ih) / 2 + offsetY);
+  return `<clipPath id="bg${cardId}"><rect width="1080" height="1350"/></clipPath>
+  <image x="${ix}" y="${iy}" width="${iw}" height="${ih}"
+    href="${image}" preserveAspectRatio="xMidYMid slice"
+    clip-path="url(#bg${cardId})"/>
+  <rect width="1080" height="1350" fill="black" fill-opacity="0.52"/>`;
+}
+
+// ── 참고 이미지 (인셋 사진, 중간 카드용) ──────────────────────────────────────
+function referenceImg(image, cardId, y = 230, w = 820, h = 280, scale = 1, offsetY = 0) {
   if (!image) return '';
   const x = Math.round((1080 - w) / 2);
   const clipId = `rc${cardId}`;
+  const iw = Math.round(w * scale);
+  const ih = Math.round(h * scale);
+  const ix = x + Math.round((w - iw) / 2);
+  const iy = y + Math.round((h - ih) / 2 + offsetY);
   return `<clipPath id="${clipId}">
     <rect x="${x}" y="${y}" width="${w}" height="${h}" rx="18"/>
   </clipPath>
-  <image x="${x}" y="${y}" width="${w}" height="${h}"
+  <image x="${ix}" y="${iy}" width="${iw}" height="${ih}"
     href="${image}" preserveAspectRatio="xMidYMid slice"
     clip-path="url(#${clipId})" opacity="0.90"/>
   <rect x="${x}" y="${y}" width="${w}" height="${h}" rx="18"
-    fill="none" stroke="white" stroke-opacity="0.12" stroke-width="1.5"/>
-  <text x="${x + w - 16}" y="${y + h - 16}"
-    font-family="'Apple SD Gothic Neo',sans-serif" font-weight="300"
-    font-size="18" fill="white" fill-opacity="0.35" text-anchor="end">참고 이미지</text>`;
+    fill="none" stroke="white" stroke-opacity="0.12" stroke-width="1.5"/>`;
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
 // CARD 1 — 커버
 // ─────────────────────────────────────────────────────────────────────────────
-function pCard1({ projectLines, tagline, part, seriesNum, image }) {
+function pCard1({ projectLines, tagline, part, seriesNum, image, imageScale = 1, imageOffsetY = 0 }) {
   const safeLines = (projectLines || []).filter(l => l && l.text).slice(0, 2);
   const hSize = 68;
   const hLineH = 86;
 
   const hasImg = !!image;
-  const imgSvg = hasImg ? referenceImg(image, 'c1', 120, 820, 330) : '';
+  // 커버는 항상 전체 배경으로
+  const imgSvg = hasImg ? bgImage(image, 'c1', imageScale, imageOffsetY) : '';
 
-  const heroY = hasImg ? 560 : 640;
+  const heroY = 620;
   const heroSvg = heroText(safeLines, heroY, hSize, hLineH);
   const heroH = heroTextH(safeLines, hSize, hLineH);
 
-  // 가운데 장식선 (이미지 없을 때만)
   const decoSvg = !hasImg
     ? `<rect x="492" y="${heroY - 52}" width="96" height="4" rx="2" fill="#3ECFB2" fill-opacity="0.55"/>`
     : '';
@@ -213,21 +236,20 @@ function pCard1({ projectLines, tagline, part, seriesNum, image }) {
   const tagY = heroY + heroH + 56;
   const tagSvg = tagline
     ? `<text x="540" y="${tagY}" text-anchor="middle"
-        font-family="'Apple SD Gothic Neo',sans-serif" font-weight="300"
-        font-size="32" fill="white" fill-opacity="0.58">${escXml(tagline)}</text>`
+        font-family="'ef_diary',sans-serif" font-weight="300"
+        font-size="32" fill="white" fill-opacity="0.78">${escXml(tagline)}</text>`
     : '';
 
-  const divSvg = `<rect x="60" y="1120" width="960" height="1" fill="white" fill-opacity="0.10"/>`;
+  const divSvg = `<rect x="60" y="1120" width="960" height="1" fill="white" fill-opacity="0.15"/>`;
   const seriesSvg = seriesNum
     ? `<text x="60" y="1158" font-family="'Pretendard ExtraBold','Pretendard',sans-serif"
         font-weight="800" font-size="22" fill="#3ECFB2" letter-spacing="3">#${escXml(seriesNum)}</text>`
     : '';
-  const sysLabel = `<text x="60" y="1200" font-family="'Apple SD Gothic Neo',sans-serif" font-weight="300"
-    font-size="24" fill="white" fill-opacity="0.38">시스템화 시리즈 · ${escXml(part || '')}</text>`;
+  const sysLabel = `<text x="60" y="1200" font-family="'ef_diary',sans-serif" font-weight="300"
+    font-size="24" fill="white" fill-opacity="0.50">시스템화 시리즈 · ${escXml(part || '')}</text>`;
 
   return svgWrap(`
-  ${darkBg('p1bg')}
-  ${imgSvg}
+  ${hasImg ? imgSvg : darkBg('p1bg')}
   ${handle()}
   ${partBadge(part)}
   ${decoSvg}
@@ -295,7 +317,7 @@ function pCard3({ heroLines, body: bodyTxt, toolHighlight, tools, image }) {
         fill="#3ECFB2" fill-opacity="0.10"/>
        <rect x="130" y="${hlY - 14}" width="5" height="56" rx="2.5" fill="#3ECFB2"/>
        <text x="540" y="${hlY + 24}" text-anchor="middle"
-         font-family="'Apple SD Gothic Neo',sans-serif" font-weight="300"
+         font-family="'ef_diary',sans-serif" font-weight="300"
          font-size="26" fill="white" fill-opacity="0.88">${escXml(toolHighlight)}</text>`
     : '';
 
@@ -336,7 +358,7 @@ function pCard4({ heroLines, impacts, image }) {
       fill="white" fill-opacity="${i % 2 === 0 ? '0.05' : '0.03'}"/>
     <rect x="130" y="${y - 8}" width="5" height="72" rx="2.5" fill="#3ECFB2"/>
     <text x="540" y="${y + 34}" text-anchor="middle"
-      font-family="'Apple SD Gothic Neo',sans-serif" font-weight="300"
+      font-family="'ef_diary',sans-serif" font-weight="300"
       font-size="30" fill="white" fill-opacity="0.90">${escXml(text)}</text>`;
   }).join('\n');
 
@@ -364,7 +386,7 @@ function pCard5({ stackTitle, stackCaption, tools }) {
 
   const captionSvg = stackCaption
     ? `<text x="540" y="1056" text-anchor="middle"
-        font-family="'Apple SD Gothic Neo',sans-serif" font-weight="300"
+        font-family="'ef_diary',sans-serif" font-weight="300"
         font-size="30" fill="white" fill-opacity="0.56">${escXml(stackCaption)}</text>`
     : '';
 
@@ -391,7 +413,7 @@ function pCard5({ stackTitle, stackCaption, tools }) {
 // ─────────────────────────────────────────────────────────────────────────────
 // CARD 6 — 아웃트로
 // ─────────────────────────────────────────────────────────────────────────────
-function pCard6({ outroLines, seriesInfo, ctaLine }) {
+function pCard6({ outroLines, seriesInfo, ctaLine, image, imageScale = 1, imageOffsetY = 0 }) {
   const safeOutro = (outroLines || [
     { text: '나는 시스템으로', color: 'white' },
     { text: '일합니다.', color: '#3ECFB2' },
@@ -412,7 +434,7 @@ function pCard6({ outroLines, seriesInfo, ctaLine }) {
   const sInfoY = divY + 60;
   const sInfoSvg = seriesInfo
     ? `<text x="540" y="${sInfoY}" text-anchor="middle"
-        font-family="'Apple SD Gothic Neo',sans-serif" font-weight="300"
+        font-family="'ef_diary',sans-serif" font-weight="300"
         font-size="26" fill="white" fill-opacity="0.45">${escXml(seriesInfo)}</text>`
     : '';
 
@@ -426,16 +448,19 @@ function pCard6({ outroLines, seriesInfo, ctaLine }) {
   const btnY = Math.max(ctaY + 80, 1020);
   const btnSvg = `<rect x="370" y="${btnY}" width="340" height="58" rx="29" fill="#3ECFB2"/>
   <text x="540" y="${btnY + 37}" text-anchor="middle"
-    font-family="'Apple SD Gothic Neo',sans-serif" font-weight="300"
+    font-family="'ef_diary',sans-serif" font-weight="300"
     font-size="22" fill="white">팔로우하고 더 보기 ✦</text>`;
 
   const bottomHandle = `<text x="540" y="1288" text-anchor="middle"
-    font-family="'Apple SD Gothic Neo',sans-serif" font-weight="300"
+    font-family="'ef_diary',sans-serif" font-weight="300"
     font-size="26" fill="white" fill-opacity="0.40">@minjaja.pdf</text>`;
 
+  const hasImg6 = !!image;
+  const imgSvg6 = hasImg6 ? bgImage(image, 'c6', imageScale, imageOffsetY) : '';
+
   return svgWrap(`
-  ${darkBg('p6bg')}
-  <ellipse cx="540" cy="530" rx="480" ry="280" fill="url(#p6glow)"/>
+  ${hasImg6 ? imgSvg6 : darkBg('p6bg')}
+  ${!hasImg6 ? '<ellipse cx="540" cy="530" rx="480" ry="280" fill="url(#p6glow)"/>' : ''}
   ${handle()}
   ${heroText(safeOutro, heroY, 88, 100)}
   ${divSvg}

@@ -35,6 +35,7 @@ const MODES = [
 
 export default function Home() {
   const startProject = useAppStore((s) => s.startProject);
+  const setPage = useAppStore((s) => s.setPage);
 
   return (
     <div className="min-h-screen bg-[#F7F7F5]" style={{ fontFamily: "'Pretendard','Apple SD Gothic Neo',sans-serif" }}>
@@ -93,6 +94,19 @@ export default function Home() {
             </button>
           ))}
         </div>
+
+        {/* 바로가기 */}
+        <div className="flex items-center gap-4 mt-2">
+          <div className="flex-1 h-px bg-gray-200" />
+          <span className="text-xs text-gray-400 whitespace-nowrap">이미지 있으세요?</span>
+          <div className="flex-1 h-px bg-gray-200" />
+        </div>
+        <button
+          onClick={() => setPage('feed')}
+          className="w-full py-4 rounded-2xl border-2 border-dashed border-gray-200 hover:border-[#3ECFB2] hover:bg-[#F0FDF9] transition-all text-sm font-semibold text-gray-500 hover:text-[#3ECFB2]"
+        >
+          ✍️ 게시글 작성하기
+        </button>
 
         {/* 플로우 설명 */}
         <div className="mt-12 bg-white rounded-2xl p-6 shadow-sm">

@@ -41,5 +41,12 @@
     "category": "sans-serif",
     "title": { "file": "yangfont02.ttf", "weight": "700" },
     "body":  { "file": "yangfont02.ttf", "weight": "700" }
+  },
+  {
+    "id": "ef_diary",
+    "name": "EF Diary",
+    "category": "handwriting",
+    "title": { "file": "EF_Diary.otf", "weight": "400" },
+    "body":  { "file": "EF_Diary.otf", "weight": "400" }
   }
 ]

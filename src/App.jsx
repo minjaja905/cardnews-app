@@ -3,6 +3,7 @@ import Home from './pages/Home';
 import MemeWizard from './pages/MemeWizard';
 import GeneralWizard from './pages/GeneralWizard';
 import PortfolioWizard from './pages/PortfolioWizard';
+import FeedWriter from './pages/FeedWriter';
 
 export default function App() {
   const page = useAppStore((s) => s.page);
@@ -10,5 +11,6 @@ export default function App() {
   if (page === 'meme') return <MemeWizard />;
   if (page === 'general') return <GeneralWizard />;
   if (page === 'portfolio') return <PortfolioWizard />;
+  if (page === 'feed') return <FeedWriter />;
   return <Home />;
 }

@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useAppStore } from '../store/useAppStore';
-import { generatePortfolioVariations } from '../lib/claudeApi';
-import { generatePortfolioCard, makeDefaultPortfolioParams, PORTFOLIO_CARD_LABELS } from '../lib/portfolioSvgGenerator';
+import { generatePortfolioVariations, parsePortfolioText, generatePortfolioFeed } from '../lib/claudeApi';
+import { generatePortfolioCard, makeDefaultPortfolioParams, PORTFOLIO_CARD_LABELS, setPortfolioFontStyle } from '../lib/portfolioSvgGenerator';
 import { applyStyle, COLOR_THEMES } from '../data/styles';
 import { downloadOne, downloadZip } from '../lib/export';
 import CardPreview from '../components/CardPreview';
@@ -16,6 +16,7 @@ const STEPS = [
   { n: 3, label: '카피 선택' },
   { n: 4, label: '편집' },
   { n: 5, label: '다운로드' },
+  { n: 6, label: '피드 글' },
 ];
 
 const PARTS = ['업무 생산성', '생활 생산성'];
@@ -173,11 +174,27 @@ function PortfolioCardEditor({ n, p, tools, onSet }) {
         <Input value={p.tagline || ''} onChange={e => onSet('tagline', e.target.value)} placeholder="반복 업무를 시스템으로" />
       </Field>
       <ImageUploader
-        label="커버 이미지 (선택)"
+        label="커버 배경 이미지 (선택)"
         value={p.image || null}
         onChange={v => onSet('image', v)}
         primaryColor="#3ECFB2"
       />
+      {p.image && (
+        <>
+          <Field label={`이미지 크기 (${Math.round((p.imageScale || 1) * 100)}%)`}>
+            <input type="range" min="0.5" max="2" step="0.05"
+              value={p.imageScale || 1}
+              onChange={e => onSet('imageScale', parseFloat(e.target.value))}
+              className="w-full accent-[#3ECFB2]" />
+          </Field>
+          <Field label={`상하 위치 (${p.imageOffsetY || 0}px)`}>
+            <input type="range" min="-400" max="400" step="10"
+              value={p.imageOffsetY || 0}
+              onChange={e => onSet('imageOffsetY', parseInt(e.target.value))}
+              className="w-full accent-[#3ECFB2]" />
+          </Field>
+        </>
+      )}
     </div>
   );
 
@@ -274,6 +291,28 @@ function PortfolioCardEditor({ n, p, tools, onSet }) {
       <Field label="CTA">
         <Input value={p.ctaLine || ''} onChange={e => onSet('ctaLine', e.target.value)} placeholder="다음 시스템화 사례도 구경하세요 →" />
       </Field>
+      <ImageUploader
+        label="아웃트로 배경 이미지 (선택)"
+        value={p.image || null}
+        onChange={v => onSet('image', v)}
+        primaryColor="#3ECFB2"
+      />
+      {p.image && (
+        <>
+          <Field label={`이미지 크기 (${Math.round((p.imageScale || 1) * 100)}%)`}>
+            <input type="range" min="0.5" max="2" step="0.05"
+              value={p.imageScale || 1}
+              onChange={e => onSet('imageScale', parseFloat(e.target.value))}
+              className="w-full accent-[#3ECFB2]" />
+          </Field>
+          <Field label={`상하 위치 (${p.imageOffsetY || 0}px)`}>
+            <input type="range" min="-400" max="400" step="10"
+              value={p.imageOffsetY || 0}
+              onChange={e => onSet('imageOffsetY', parseInt(e.target.value))}
+              className="w-full accent-[#3ECFB2]" />
+          </Field>
+        </>
+      )}
     </div>
   );
 
@@ -298,12 +337,40 @@ export default function PortfolioWizard() {
   const [solution, setSolution] = useState('');
   const [impacts, setImpacts] = useState(['', '', '']);
   const [tools, setTools] = useState([]);
+  const [inputMode, setInputMode] = useState('manual'); // 'manual' | 'paste'
+  const [pasteText, setPasteText] = useState('');
+  const [parseLoading, setParseLoading] = useState(false);
+  const [parseError, setParseError] = useState('');
 
   const [activeCard, setActiveCard] = useState(1);
   const [exportFormat, setExportFormat] = useState('svg');
   const [exportLoading, setExportLoading] = useState(false);
   const [elapsedSec, setElapsedSec] = useState(0);
   const ESTIMATED_SEC = 20;
+  const [fontReady, setFontReady] = useState(false);
+  const [feedText, setFeedText] = useState('');
+  const [feedLoading, setFeedLoading] = useState(false);
+  const [feedError, setFeedError] = useState('');
+  const [feedCopied, setFeedCopied] = useState(false);
+
+  // ── ef_diary 폰트 SVG embed ───────────────────────────────────────────────
+  useEffect(() => {
+    fetch('/fonts/EF_Diary.otf')
+      .then(r => r.arrayBuffer())
+      .then(buf => {
+        const bytes = new Uint8Array(buf);
+        let b64 = '';
+        for (let i = 0; i < bytes.length; i += 8192) {
+          b64 += String.fromCharCode(...bytes.subarray(i, i + 8192));
+        }
+        b64 = btoa(b64);
+        setPortfolioFontStyle(
+          `@font-face{font-family:'ef_diary';src:url('data:font/otf;base64,${b64}') format('opentype');font-weight:400;font-style:normal;}`
+        );
+        setFontReady(true);
+      })
+      .catch(() => { setFontReady(true); });
+  }, []);
 
   // ── AI 타이머 ─────────────────────────────────────────────────────────────
   useEffect(() => {
@@ -329,7 +396,7 @@ export default function PortfolioWizard() {
     }
     setSvgs(built);
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [params, tools, style]);
+  }, [params, tools, style, fontReady]);
 
   useEffect(() => { rebuildSvgs(); }, [rebuildSvgs]);
 
@@ -372,6 +439,30 @@ export default function PortfolioWizard() {
     setStep(4);
   }
 
+  // ── 피드 글 생성 ──────────────────────────────────────────────────────────
+  async function handleGenerateFeed() {
+    setFeedError('');
+    setFeedLoading(true);
+    try {
+      const text = await generatePortfolioFeed({ seriesNum, projectName, part, problem, solution, impacts, tools });
+      setFeedText(text);
+    } catch (e) {
+      setFeedError(e.message);
+    } finally {
+      setFeedLoading(false);
+    }
+  }
+
+  async function handleCopyFeed() {
+    try {
+      await navigator.clipboard.writeText(feedText);
+      setFeedCopied(true);
+      setTimeout(() => setFeedCopied(false), 2000);
+    } catch {
+      alert('복사 실패 — 텍스트를 직접 선택해서 복사해주세요.');
+    }
+  }
+
   // ── 다운로드 ───────────────────────────────────────────────────────────────
   async function handleDownloadAll() {
     setExportLoading(true);
@@ -400,6 +491,25 @@ export default function PortfolioWizard() {
   }
 
   const PREVIEW_SCALE = 0.22;
+
+  async function handleParse() {
+    if (!pasteText.trim()) return;
+    setParseError('');
+    setParseLoading(true);
+    try {
+      const result = await parsePortfolioText(pasteText);
+      if (result.projectName) setProjectName(result.projectName);
+      if (result.problem) setProblem(result.problem);
+      if (result.solution) setSolution(result.solution);
+      if (result.impacts?.length) setImpacts([result.impacts[0] || '', result.impacts[1] || '', result.impacts[2] || '']);
+      if (result.tools?.length) setTools(result.tools);
+      setInputMode('manual');
+    } catch (e) {
+      setParseError(e.message);
+    } finally {
+      setParseLoading(false);
+    }
+  }
 
   const step1Valid = projectName.trim().length > 0 && problem.trim().length > 0;
 
@@ -460,15 +570,55 @@ export default function PortfolioWizard() {
       <main className="max-w-screen-xl mx-auto px-6 py-6">
         <div className="flex gap-6">
           {/* ── 왼쪽 패널 ── */}
-          <div className="w-80 flex-shrink-0 flex flex-col gap-4">
+          <div className="w-80 flex-shrink-0 flex flex-col gap-4 sticky top-[60px] self-start max-h-[calc(100vh-80px)] overflow-y-auto">
 
             {/* STEP 1 — 프로젝트 정보 */}
             {step === 1 && (
               <div className="bg-white rounded-2xl p-5 shadow-sm flex flex-col gap-5">
                 <div>
                   <h2 className="font-bold text-gray-900">프로젝트 정보</h2>
-                  <p className="text-xs text-gray-400 mt-1">노션 포폴 내용을 그대로 붙여넣어도 됩니다</p>
                 </div>
+
+                {/* 입력 방식 탭 */}
+                <div className="flex gap-1 p-1 bg-gray-100 rounded-xl">
+                  {[{ key: 'manual', label: '직접 입력' }, { key: 'paste', label: '✦ 줄글 붙여넣기' }].map(m => (
+                    <button
+                      key={m.key}
+                      onClick={() => setInputMode(m.key)}
+                      className="flex-1 py-1.5 rounded-lg text-xs font-semibold transition-all"
+                      style={inputMode === m.key
+                        ? { backgroundColor: 'white', color: primary, boxShadow: '0 1px 4px rgba(0,0,0,0.08)' }
+                        : { color: '#9ca3af' }}
+                    >
+                      {m.label}
+                    </button>
+                  ))}
+                </div>
+
+                {/* 줄글 붙여넣기 모드 */}
+                {inputMode === 'paste' && (
+                  <div className="flex flex-col gap-3">
+                    <Textarea
+                      rows={12}
+                      value={pasteText}
+                      onChange={e => setPasteText(e.target.value)}
+                      placeholder="노션 포트폴리오 내용을 그대로 붙여넣으세요.&#10;&#10;예)&#10;펀칭 이미지 메이커 제작 2026&#10;&#10;Problem: 전용 웹툴의 부재&#10;Solution: React + Canvas API로...&#10;Detail & Impact: ..."
+                    />
+                    {parseError && <p className="text-xs text-red-500">{parseError}</p>}
+                    <button
+                      onClick={handleParse}
+                      disabled={parseLoading || !pasteText.trim()}
+                      className="w-full py-2.5 rounded-xl font-bold text-sm text-white transition-all"
+                      style={{ backgroundColor: parseLoading || !pasteText.trim() ? '#9ca3af' : primary }}
+                    >
+                      {parseLoading ? '✦ AI 파싱 중...' : '✦ AI로 자동 파싱'}
+                    </button>
+                    <p className="text-[11px] text-gray-400 text-center">파싱 후 직접 입력 탭에서 내용 확인·수정 가능</p>
+                  </div>
+                )}
+
+                {/* 직접 입력 모드 */}
+                {inputMode === 'manual' && (<>
 
                 {/* 파트 선택 */}
                 <Field label="파트 선택 *">
@@ -532,6 +682,7 @@ export default function PortfolioWizard() {
                 >
                   다음: 스타일 설정 →
                 </button>
+                </>)}
               </div>
             )}
 
@@ -683,7 +834,65 @@ export default function PortfolioWizard() {
                     </button>
                   ))}
                 </div>
+                <button
+                  onClick={() => { setStep(6); if (!feedText) handleGenerateFeed(); }}
+                  className="w-full py-3 rounded-xl font-bold text-sm text-white"
+                  style={{ backgroundColor: primary }}
+                >
+                  피드 글 작성하기 →
+                </button>
                 <button onClick={() => setStep(4)} className="text-xs text-gray-400 hover:text-gray-600 text-center">← 텍스트 수정</button>
+              </div>
+            )}
+
+            {/* STEP 6 — 피드 글 */}
+            {step === 6 && (
+              <div className="bg-white rounded-2xl p-5 shadow-sm flex flex-col gap-4">
+                <div className="flex items-center justify-between">
+                  <h2 className="font-bold text-gray-900">피드 글</h2>
+                  <button
+                    onClick={handleGenerateFeed}
+                    disabled={feedLoading}
+                    className="text-xs px-3 py-1.5 rounded-lg font-medium text-white transition-all"
+                    style={{ backgroundColor: feedLoading ? '#9ca3af' : primary }}
+                  >
+                    {feedLoading ? '생성 중...' : '↻ 다시 생성'}
+                  </button>
+                </div>
+
+                {feedError && (
+                  <p className="text-xs text-red-500 bg-red-50 border border-red-100 p-2 rounded-lg">{feedError}</p>
+                )}
+
+                {feedLoading && (
+                  <div className="flex flex-col items-center gap-3 py-8">
+                    <div className="w-8 h-8 rounded-full border-2 border-t-transparent animate-spin" style={{ borderColor: primary, borderTopColor: 'transparent' }} />
+                    <p className="text-sm text-gray-400">피드 글 작성 중...</p>
+                  </div>
+                )}
+
+                {!feedLoading && feedText && (
+                  <>
+                    <textarea
+                      value={feedText}
+                      onChange={(e) => setFeedText(e.target.value)}
+                      rows={18}
+                      className="w-full text-sm text-gray-800 leading-relaxed border border-gray-100 rounded-xl p-4 resize-none focus:outline-none focus:border-gray-300"
+                      style={{ fontFamily: "'Pretendard','Apple SD Gothic Neo',sans-serif" }}
+                    />
+                    <button
+                      onClick={handleCopyFeed}
+                      className="w-full py-3 rounded-xl font-bold text-sm transition-all"
+                      style={feedCopied
+                        ? { backgroundColor: '#10b981', color: 'white' }
+                        : { backgroundColor: primary, color: 'white' }}
+                    >
+                      {feedCopied ? '✓ 복사됨' : '클립보드에 복사'}
+                    </button>
+                  </>
+                )}
+
+                <button onClick={() => setStep(5)} className="text-xs text-gray-400 hover:text-gray-600 text-center">← 다운로드로</button>
               </div>
             )}
           </div>

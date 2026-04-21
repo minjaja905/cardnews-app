@@ -178,6 +178,7 @@ export default function MemeWizard() {
     params, setParams, updateParam, images, setImage,
     aiLoading, setAiLoading, aiError, setAiError, setPage,
     cardCount, setCardCount,
+    coverType, setCoverType,
   } = store;
 
   const [activeCard, setActiveCard] = useState(1);
@@ -201,7 +202,7 @@ export default function MemeWizard() {
   function buildCardParams(n) {
     const base = { memeName: topic, volNum: Number(volNum) || 1, date };
     const p = params?.[`card${n}`] || {};
-    if (n === 1) return { ...base, ...p, coverImg: images.cover };
+    if (n === 1) return { ...base, ...p, coverImg: coverType === 'photo' ? images.cover : null };
     if (n === 2) return { ...base, ...p, mainImg: images.origin };
     if (n === 3) return { ...base, ...p, spreadImg1: images.spread1, spreadImg2: images.spread2 };
     if (n === 4) return { ...base, ...p, sideImg: images.side };
@@ -399,7 +400,7 @@ export default function MemeWizard() {
       <main className="max-w-screen-xl mx-auto px-4 py-5">
         <div className="flex gap-5">
           {/* ── 왼쪽 패널 ── */}
-          <div className="w-72 flex-shrink-0 flex flex-col gap-3">
+          <div className="w-72 flex-shrink-0 flex flex-col gap-3 sticky top-[60px] self-start max-h-[calc(100vh-80px)] overflow-y-auto">
 
             {/* STEP 1 */}
             {step === 1 && (
@@ -427,6 +428,35 @@ export default function MemeWizard() {
                     onChange={e => setDetails(e.target.value)}
                     placeholder="예: 트위터에서 시작된 밈, CS 대화 스크린샷"
                   />
+                </Field>
+                <Field label="커버 배경">
+                  <div className="flex gap-2">
+                    {[
+                      { val: 'color', icon: '🎨', label: '컬러 배경' },
+                      { val: 'photo', icon: '🖼️', label: '배경사진' },
+                    ].map(({ val, icon, label }) => (
+                      <button
+                        key={val}
+                        onClick={() => setCoverType(val)}
+                        className="flex-1 flex flex-col items-center gap-1 py-2.5 rounded-xl border text-xs font-medium transition-all"
+                        style={coverType === val
+                          ? { borderColor: primary, backgroundColor: `${primary}15`, color: primary }
+                          : { borderColor: '#E5E7EB', color: '#9CA3AF' }}
+                      >
+                        <span className="text-base">{icon}</span>
+                        {label}
+                      </button>
+                    ))}
+                  </div>
+                  {coverType === 'photo' && (
+                    <div className="mt-2">
+                      <ImageUploader
+                        value={images.cover || null}
+                        onChange={(v) => setImage('cover', v)}
+                        primaryColor={primary}
+                      />
+                    </div>
+                  )}
                 </Field>
                 {aiError && <p className="text-xs text-red-500">{aiError}</p>}
                 <button
