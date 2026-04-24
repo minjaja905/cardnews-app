@@ -87,6 +87,24 @@ function escXml(str) {
     .replace(/"/g, '&quot;');
 }
 
+// SVG text wrapping — Korean char avg width ≈ fontSize * 0.75
+function wrapText(text, maxPx, fontSize) {
+  const avgW = fontSize * 0.75;
+  const maxChars = Math.max(4, Math.floor(maxPx / avgW));
+  const result = [];
+  let str = String(text || '');
+  while (str.length > maxChars) {
+    let cut = maxChars;
+    for (let i = maxChars - 1; i >= Math.max(1, maxChars - 6); i--) {
+      if (str[i] === ' ') { cut = i + 1; break; }
+    }
+    result.push(str.slice(0, cut).trimEnd());
+    str = str.slice(cut).trimStart();
+  }
+  if (str) result.push(str);
+  return result.length ? result : [''];
+}
+
 const SHADOW_DEF = `<filter id="shadow" x="-5%" y="-5%" width="110%" height="110%">
     <feDropShadow dx="0" dy="2" stdDeviation="6" flood-opacity="0.10"/>
   </filter>`;
@@ -193,43 +211,49 @@ function card2({ heroLines, leftBoxLines, rightBoxLines, mainImg, summaryLines }
   const photoH = 560;
   const photoSvg = mainImg ? imgTag(mainImg, photoX, photoY, photoW, photoH, 'card2MainImg', 16) : '';
 
-  // 좌측 텍스트 박스: x=16, 흰 박스 + 검은 텍스트 LeeSeoyun 18px 가운데 정렬
-  const leftLines = leftBoxLines || [];
-  const boxLineH = 26;
-  const leftBoxH = leftLines.length * boxLineH + 28;
+  // 좌측 텍스트 박스: x=16, 흰 박스 + 검은 텍스트 26px + 자동 줄바꿈
+  const BOX_FONT = 26;
+  const boxLineH = 34;
   const leftBoxX = 16;
   const leftBoxY = 470;
   const leftBoxW = 188;
-  const leftBoxSvg = leftLines.length ? `
+  const leftLines = leftBoxLines || [];
+  const leftWrapped = leftLines.flatMap(t => wrapText(t, leftBoxW - 20, BOX_FONT));
+  const leftBoxH = Math.max(52, leftWrapped.length * boxLineH + 28);
+  const leftBoxSvg = leftWrapped.length ? `
   <rect x="${leftBoxX}" y="${leftBoxY}" width="${leftBoxW}" height="${leftBoxH}"
     rx="12" fill="white" fill-opacity="0.95" filter="url(#shadow)"/>
-  ${leftLines.map((t, i) => `<text x="${leftBoxX + leftBoxW / 2}" y="${leftBoxY + 20 + i * boxLineH}"
+  ${leftWrapped.map((t, i) => `<text x="${leftBoxX + leftBoxW / 2}" y="${leftBoxY + 26 + i * boxLineH}"
     font-family="'LeeSeoyun','Apple SD Gothic Neo',sans-serif"
-    font-size="18" fill="#1A1A1A" text-anchor="middle">${escXml(t)}</text>`).join('\n')}` : '';
+    font-size="${BOX_FONT}" fill="#1A1A1A" text-anchor="middle">${escXml(t)}</text>`).join('\n')}` : '';
 
-  // 우측 텍스트 박스: x=876 (220+640+16)
-  const rightLines = rightBoxLines || [];
-  const rightBoxH = rightLines.length * boxLineH + 28;
+  // 우측 텍스트 박스: x=876 (220+640+16) — 동일 규칙
   const rightBoxX = 876;
   const rightBoxY = 470;
   const rightBoxW = 188;
-  const rightBoxSvg = rightLines.length ? `
+  const rightLines = rightBoxLines || [];
+  const rightWrapped = rightLines.flatMap(t => wrapText(t, rightBoxW - 20, BOX_FONT));
+  const rightBoxH = Math.max(52, rightWrapped.length * boxLineH + 28);
+  const rightBoxSvg = rightWrapped.length ? `
   <rect x="${rightBoxX}" y="${rightBoxY}" width="${rightBoxW}" height="${rightBoxH}"
     rx="12" fill="white" fill-opacity="0.95" filter="url(#shadow)"/>
-  ${rightLines.map((t, i) => `<text x="${rightBoxX + rightBoxW / 2}" y="${rightBoxY + 20 + i * boxLineH}"
+  ${rightWrapped.map((t, i) => `<text x="${rightBoxX + rightBoxW / 2}" y="${rightBoxY + 26 + i * boxLineH}"
     font-family="'LeeSeoyun','Apple SD Gothic Neo',sans-serif"
-    font-size="18" fill="#1A1A1A" text-anchor="middle">${escXml(t)}</text>`).join('\n')}` : '';
+    font-size="${BOX_FONT}" fill="#1A1A1A" text-anchor="middle">${escXml(t)}</text>`).join('\n')}` : '';
 
-  // 하단 요약 박스 (고정 y=1040)
+  // 하단 요약 박스 (고정 y=1040) — 26px + 자동 줄바꿈
+  const SUM_FONT = 28;
+  const sumLineH = 38;
   const sumLines = summaryLines || [];
-  const summaryBoxH = Math.max(72, sumLines.length * 30 + 32);
+  const sumWrapped = sumLines.flatMap(t => wrapText(t, 920, SUM_FONT));
+  const summaryBoxH = Math.max(72, sumWrapped.length * sumLineH + 32);
   const summarySvg = `
   <rect x="40" y="1040" width="1000" height="${summaryBoxH}" rx="16"
     fill="white" fill-opacity="0.88" filter="url(#shadow)"/>
   <rect x="40" y="1040" width="5" height="${summaryBoxH}" rx="3" fill="#3ECFB2"/>
-  ${sumLines.map((t, i) => `<text x="60" y="${1040 + 26 + i * 30}"
+  ${sumWrapped.map((t, i) => `<text x="60" y="${1040 + 30 + i * sumLineH}"
     font-family="'LeeSeoyun','Apple SD Gothic Neo',sans-serif"
-    font-size="20" fill="#1A1A1A">${escXml(t)}</text>`).join('\n')}`;
+    font-size="${SUM_FONT}" fill="#1A1A1A">${escXml(t)}</text>`).join('\n')}`;
 
   const body = `
   ${gradBg()}
@@ -259,11 +283,11 @@ function card3({ heroLines, subtitleLines, spreadImg1, spreadImg2, captionRight,
   const h3LastBaseline = 228 + (h3Count - 1) * 90;
   const subtitleBaseY = Math.max(360, h3LastBaseline + 42);
   const subCount3 = (subtitleLines || []).length;
-  const imgBaseY = Math.max(412, subtitleBaseY + subCount3 * 24 + 28);
+  const imgBaseY = Math.max(412, subtitleBaseY + subCount3 * 32 + 28);
 
   const subtitleSvg = (subtitleLines || []).map((t, i) =>
-    `<text x="58" y="${subtitleBaseY + i * 24}" font-family="'LeeSeoyun','Apple SD Gothic Neo',sans-serif"
-        font-size="20" fill="#555555">${escXml(t)}</text>`
+    `<text x="58" y="${subtitleBaseY + i * 32}" font-family="'LeeSeoyun','Apple SD Gothic Neo',sans-serif"
+        font-size="26" fill="#555555">${escXml(t)}</text>`
   ).join('\n');
 
   const img1Svg = spreadImg1 ? imgTag(spreadImg1, 52, imgBaseY, 400, 520, 'blogClip') : '';
@@ -271,13 +295,13 @@ function card3({ heroLines, subtitleLines, spreadImg1, spreadImg2, captionRight,
   const img2BotSvg = spreadImg2 ? imgTag(spreadImg2, 476, imgBaseY + 270, 550, 248, 'ipodBot') : '';
 
   const mintBox = mintBoxLines?.length ? `
-  <rect x="52" y="960" width="976" height="${mintBoxLines.length * 28 + 32}" rx="16" fill="#3ECFB2" opacity="0.15"/>
-  <rect x="52" y="960" width="976" height="${mintBoxLines.length * 28 + 32}" rx="16"
+  <rect x="52" y="960" width="976" height="${mintBoxLines.length * 38 + 32}" rx="16" fill="#3ECFB2" opacity="0.15"/>
+  <rect x="52" y="960" width="976" height="${mintBoxLines.length * 38 + 32}" rx="16"
         fill="none" stroke="#3ECFB2" stroke-width="1.5"/>
   ${mintBoxLines.map((t, i) => {
-    const font = i === 0 ? `font-family="'Pretendard ExtraBold'" font-weight="800" font-size="21" fill="#1A1A1A"` :
-      `font-family="'LeeSeoyun','Apple SD Gothic Neo',sans-serif" font-size="19" fill="#444444"`;
-    return `<text x="72" y="${994 + i * 28}" ${font}>${escXml(t)}</text>`;
+    const font = i === 0 ? `font-family="'Pretendard ExtraBold'" font-weight="800" font-size="28" fill="#1A1A1A"` :
+      `font-family="'LeeSeoyun','Apple SD Gothic Neo',sans-serif" font-size="25" fill="#444444"`;
+    return `<text x="72" y="${998 + i * 38}" ${font}>${escXml(t)}</text>`;
   }).join('\n')}` : '';
 
   const body = `
