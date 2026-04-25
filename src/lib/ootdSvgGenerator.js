@@ -149,3 +149,48 @@ export function generateOOTDSlide2Photo({
 }
 
 export const OOTD_ACCENT = ACCENT;
+
+// ── 폰트 embed (SVG/PNG 다운로드용) ──────────────────────────────────────────
+// fetch 결과를 캐싱해서 다운로드마다 재요청하지 않음
+const _fontCache = {};
+
+async function fetchB64(url) {
+  if (_fontCache[url]) return _fontCache[url];
+  const res = await fetch(url);
+  const blob = await res.blob();
+  const b64 = await new Promise((resolve) => {
+    const reader = new FileReader();
+    reader.onloadend = () => resolve(reader.result.split(',')[1]);
+    reader.readAsDataURL(blob);
+  });
+  _fontCache[url] = b64;
+  return b64;
+}
+
+export async function embedFontsInSvg(svgString) {
+  const [yangB64, regB64, boldB64] = await Promise.all([
+    fetchB64('/fonts/yangfont02.ttf'),
+    fetchB64('/fonts/Pretendard-Regular.otf'),
+    fetchB64('/fonts/Pretendard-Bold.otf'),
+  ]);
+
+  const style = `<style>
+    @font-face {
+      font-family: 'Yang organization Gothic Bold';
+      src: url('data:font/truetype;base64,${yangB64}') format('truetype');
+      font-weight: 700;
+    }
+    @font-face {
+      font-family: 'Pretendard';
+      src: url('data:font/opentype;base64,${regB64}') format('opentype');
+      font-weight: 400;
+    }
+    @font-face {
+      font-family: 'Pretendard';
+      src: url('data:font/opentype;base64,${boldB64}') format('opentype');
+      font-weight: 700;
+    }
+  </style>`;
+
+  return svgString.replace('</defs>', `${style}</defs>`);
+}

@@ -1,6 +1,6 @@
 import { useState, useCallback, useEffect } from 'react';
 import { useAppStore } from '../store/useAppStore';
-import { generateOOTDCover, generateOOTDSlide, generateOOTDSlide2Photo } from '../lib/ootdSvgGenerator';
+import { generateOOTDCover, generateOOTDSlide, generateOOTDSlide2Photo, embedFontsInSvg } from '../lib/ootdSvgGenerator';
 import { loadFonts } from '../lib/fontLoader';
 import { downloadOne, downloadZip } from '../lib/export';
 import CardPreview from '../components/CardPreview';
@@ -145,8 +145,9 @@ export default function OOTDWizard() {
   async function handleDownloadAll() {
     setExporting(true);
     try {
+      const embedded = await Promise.all(svgs.map(embedFontsInSvg));
       const labels = ['커버', ...slides.map((_, i) => `아이템${i + 1}`)];
-      await downloadZip({ svgs, labels, slug: 'OOTD', format: exportFmt });
+      await downloadZip({ svgs: embedded, labels, slug: 'OOTD', format: exportFmt });
     } catch (e) {
       alert('다운로드 실패: ' + e.message);
     } finally {
@@ -157,7 +158,8 @@ export default function OOTDWizard() {
   async function handleDownloadOne(i) {
     const label = i === 0 ? '커버' : `아이템${i}`;
     try {
-      await downloadOne({ svgString: svgs[i], filename: `${i + 1}_${label}.${exportFmt}`, format: exportFmt });
+      const embedded = await embedFontsInSvg(svgs[i]);
+      await downloadOne({ svgString: embedded, filename: `${i + 1}_${label}.${exportFmt}`, format: exportFmt });
     } catch (e) {
       alert('다운로드 실패: ' + e.message);
     }
