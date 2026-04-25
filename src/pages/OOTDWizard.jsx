@@ -78,7 +78,7 @@ const defaultSlide = (id) => ({
 export default function OOTDWizard() {
   const setPage = useAppStore((s) => s.setPage);
 
-  const [cover, setCover] = useState({ bgImage: null, line1: '', line2white: '', line2accent: '' });
+  const [cover, setCover] = useState({ bgImage: null, line1: '', line2: '' });
   const [slides, setSlides] = useState([defaultSlide(1)]);
   const [activeIdx, setActiveIdx] = useState(0);
   const [exportFmt, setExportFmt] = useState('svg');
@@ -92,8 +92,7 @@ export default function OOTDWizard() {
     const coverSvg = generateOOTDCover({
       bgImage: cover.bgImage,
       line1: cover.line1,
-      line2white: cover.line2white,
-      line2accent: cover.line2accent,
+      line2: cover.line2,
     });
     const slideSvgs = slides.map((s) =>
       s.subImage
@@ -208,27 +207,22 @@ export default function OOTDWizard() {
 
             {activeIdx === 0 && (
               <div className="flex flex-col gap-2" onClick={(e) => e.stopPropagation()}>
+                <p className="text-[10px] text-gray-400 leading-relaxed">
+                  강조할 단어를 <span className="font-bold" style={{ color: ACCENT_DARK }}>[대괄호]</span>로 감싸세요<br />
+                  예: 매일 들려입기 좋은 / <span style={{ color: ACCENT_DARK }}>[출근룩]</span> 추천템
+                </p>
                 <input
                   className="border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none"
-                  placeholder="서브 타이틀 (작은 글씨)"
+                  placeholder="1줄 — 매일 들려입기 좋은"
                   value={cover.line1}
                   onChange={(e) => setCover((c) => ({ ...c, line1: e.target.value }))}
                 />
-                <div className="flex gap-2">
-                  <input
-                    className="flex-1 border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none"
-                    placeholder="메인 타이틀 (흰색)"
-                    value={cover.line2white}
-                    onChange={(e) => setCover((c) => ({ ...c, line2white: e.target.value }))}
-                  />
-                  <input
-                    className="w-28 border-2 rounded-lg px-3 py-2 text-sm focus:outline-none"
-                    style={{ borderColor: ACCENT, background: '#f0fbfc' }}
-                    placeholder="강조 (하늘)"
-                    value={cover.line2accent}
-                    onChange={(e) => setCover((c) => ({ ...c, line2accent: e.target.value }))}
-                  />
-                </div>
+                <input
+                  className="border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none"
+                  placeholder="2줄 — [출근룩] 추천템"
+                  value={cover.line2}
+                  onChange={(e) => setCover((c) => ({ ...c, line2: e.target.value }))}
+                />
               </div>
             )}
           </div>

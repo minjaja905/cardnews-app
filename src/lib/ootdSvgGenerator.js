@@ -27,23 +27,33 @@ function wrap(body) {
 </svg>`;
 }
 
+// [단어] 마크업을 tspan으로 파싱 — [text]는 ACCENT, 나머지는 흰색
+function parseAccentLine(text) {
+  return String(text || '').split(/(\[[^\]]*\])/).map(part => {
+    if (part.startsWith('[') && part.endsWith(']')) {
+      return `<tspan fill="${ACCENT}">${esc(part.slice(1, -1))}</tspan>`;
+    }
+    return part ? `<tspan fill="white">${esc(part)}</tspan>` : '';
+  }).join('');
+}
+
 // ── 커버 카드 ─────────────────────────────────────────────────────────────────
-// line1: 작은 텍스트 (흰색)
-// line2white + line2accent: 큰 텍스트 — 흰색 부분 + 강조색 부분 (같은 줄)
-export function generateOOTDCover({ bgImage, line1, line2white, line2accent }) {
+// line1, line2: 모두 Yang organization Gothic Bold 84px
+// 강조할 단어는 [대괄호]로 감싸기 — 위치 무관 ([출근룩] 추천템 / 출근룩 [추천템] 모두 가능)
+// 행간 120px (피그마 기준)
+export function generateOOTDCover({ bgImage, line1, line2 }) {
   const bg = bgImage
     ? `<image href="${bgImage}" x="0" y="0" width="1080" height="1350" preserveAspectRatio="xMidYMid slice"/>
        <rect width="1080" height="1350" fill="url(#covgrad)"/>`
     : `<rect width="1080" height="1350" fill="#2a2a2a"/>`;
 
-  // line2 두 파트를 tspan으로 이어붙임 (같은 줄, 다른 색)
-  const line2svg = (line2white || line2accent)
-    ? `<text x="540" y="1180"
-        font-family="'Yang organization Gothic Bold', sans-serif"
-        font-weight="700" font-size="90" text-anchor="middle"
-        filter="url(#tsheavy)">
-        <tspan fill="white">${esc(line2white || '')}</tspan><tspan fill="${ACCENT}">${esc(line2accent || '')}</tspan>
-      </text>` : '';
+  const Y1 = 1060;
+  const Y2 = Y1 + 120; // 행간 120
+
+  const textLine = (text, y) => !text ? '' : `<text x="540" y="${y}"
+    font-family="'Yang organization Gothic Bold', sans-serif"
+    font-weight="700" font-size="84" text-anchor="middle"
+    filter="url(#tsheavy)">${parseAccentLine(text)}</text>`;
 
   return wrap(`
   ${bg}
@@ -53,14 +63,8 @@ export function generateOOTDCover({ bgImage, line1, line2white, line2accent }) {
     font-weight="400" font-size="22"
     fill="white" fill-opacity="0.52" text-anchor="middle"
     filter="url(#ts)">@minjaja.pdf</text>
-  <!-- 서브 텍스트 (작게) -->
-  ${line1 ? `<text x="540" y="1080"
-    font-family="'pretendard', 'Pretendard', sans-serif"
-    font-weight="400" font-size="38"
-    fill="white" fill-opacity="0.85" text-anchor="middle"
-    filter="url(#ts)">${esc(line1)}</text>` : ''}
-  <!-- 메인 타이틀 -->
-  ${line2svg}
+  ${textLine(line1, Y1)}
+  ${textLine(line2, Y2)}
   `);
 }
 
