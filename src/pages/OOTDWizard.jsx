@@ -79,6 +79,7 @@ export default function OOTDWizard() {
   const setPage = useAppStore((s) => s.setPage);
 
   const [cover, setCover] = useState({ bgImage: null, line1: '', line2: '' });
+  const [accentColor, setAccentColor] = useState('#B6ECF1');
   const [slides, setSlides] = useState([defaultSlide(1)]);
   const [activeIdx, setActiveIdx] = useState(0);
   const [exportFmt, setExportFmt] = useState('svg');
@@ -93,6 +94,7 @@ export default function OOTDWizard() {
       bgImage: cover.bgImage,
       line1: cover.line1,
       line2: cover.line2,
+      accentColor,
     });
     const slideSvgs = slides.map((s) =>
       s.subImage
@@ -208,8 +210,7 @@ export default function OOTDWizard() {
             {activeIdx === 0 && (
               <div className="flex flex-col gap-2" onClick={(e) => e.stopPropagation()}>
                 <p className="text-[10px] text-gray-400 leading-relaxed">
-                  강조할 단어를 <span className="font-bold" style={{ color: ACCENT_DARK }}>[대괄호]</span>로 감싸세요<br />
-                  예: 매일 들려입기 좋은 / <span style={{ color: ACCENT_DARK }}>[출근룩]</span> 추천템
+                  강조할 단어를 <span className="font-bold" style={{ color: ACCENT_DARK }}>[대괄호]</span>로 감싸세요
                 </p>
                 <input
                   className="border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none"
@@ -223,6 +224,38 @@ export default function OOTDWizard() {
                   value={cover.line2}
                   onChange={(e) => setCover((c) => ({ ...c, line2: e.target.value }))}
                 />
+                {/* 강조색 선택 */}
+                <div className="flex items-center gap-2 pt-1">
+                  <span className="text-xs text-gray-400">강조색</span>
+                  {/* 컬러 스와치 + input color */}
+                  <label className="cursor-pointer flex items-center gap-1.5">
+                    <span
+                      className="w-6 h-6 rounded-full border-2 border-white shadow-sm ring-1 ring-gray-200"
+                      style={{ backgroundColor: accentColor }}
+                    />
+                    <input
+                      type="color"
+                      value={accentColor}
+                      onChange={(e) => setAccentColor(e.target.value)}
+                      className="sr-only"
+                    />
+                    <span className="text-[10px] text-gray-400">{accentColor}</span>
+                  </label>
+                  {/* EyeDropper (Chromium only) */}
+                  {'EyeDropper' in window && (
+                    <button
+                      onClick={async () => {
+                        try {
+                          const { sRGBHex } = await new window.EyeDropper().open();
+                          setAccentColor(sRGBHex);
+                        } catch {}
+                      }}
+                      className="text-xs px-2.5 py-1 rounded-lg bg-gray-100 hover:bg-gray-200 transition-colors text-gray-600 font-medium"
+                    >
+                      스포이드
+                    </button>
+                  )}
+                </div>
               </div>
             )}
           </div>

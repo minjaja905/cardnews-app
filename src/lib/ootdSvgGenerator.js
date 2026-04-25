@@ -27,11 +27,11 @@ function wrap(body) {
 </svg>`;
 }
 
-// [단어] 마크업을 tspan으로 파싱 — [text]는 ACCENT, 나머지는 흰색
-function parseAccentLine(text) {
+// [단어] 마크업을 tspan으로 파싱 — [text]는 accentColor, 나머지는 흰색
+function parseAccentLine(text, accentColor = ACCENT) {
   return String(text || '').split(/(\[[^\]]*\])/).map(part => {
     if (part.startsWith('[') && part.endsWith(']')) {
-      return `<tspan fill="${ACCENT}">${esc(part.slice(1, -1))}</tspan>`;
+      return `<tspan fill="${accentColor}">${esc(part.slice(1, -1))}</tspan>`;
     }
     return part ? `<tspan fill="white">${esc(part)}</tspan>` : '';
   }).join('');
@@ -41,7 +41,7 @@ function parseAccentLine(text) {
 // line1, line2: 모두 Yang organization Gothic Bold 84px
 // 강조할 단어는 [대괄호]로 감싸기 — 위치 무관 ([출근룩] 추천템 / 출근룩 [추천템] 모두 가능)
 // 행간 120px (피그마 기준)
-export function generateOOTDCover({ bgImage, line1, line2 }) {
+export function generateOOTDCover({ bgImage, line1, line2, accentColor = ACCENT }) {
   const bg = bgImage
     ? `<image href="${bgImage}" x="0" y="0" width="1080" height="1350" preserveAspectRatio="xMidYMid slice"/>
        <rect width="1080" height="1350" fill="url(#covgrad)"/>`
@@ -53,7 +53,7 @@ export function generateOOTDCover({ bgImage, line1, line2 }) {
   const textLine = (text, y) => !text ? '' : `<text x="540" y="${y}"
     font-family="'Yang organization Gothic Bold', sans-serif"
     font-weight="700" font-size="84" text-anchor="middle"
-    filter="url(#tsheavy)">${parseAccentLine(text)}</text>`;
+    filter="url(#tsheavy)">${parseAccentLine(text, accentColor)}</text>`;
 
   return wrap(`
   ${bg}
