@@ -2,6 +2,16 @@ import { useAppStore } from '../store/useAppStore';
 
 const MODES = [
   {
+    key: 'ootd',
+    emoji: '👗',
+    title: 'OOTD 카드뉴스',
+    subtitle: '사진 업로드형',
+    desc: '사진 올리고 텍스트 입력하면 끝\n출근룩·코디·아이템 소개에 최적',
+    tags: ['사진 업로드', '텍스트 위치 조절', 'SVG/PNG 다운'],
+    color: '#C9896A',
+    grad: 'from-[#E8D5C4] to-[#FAF7F2]',
+  },
+  {
     key: 'meme',
     emoji: '🔥',
     title: '밈 카드뉴스',
