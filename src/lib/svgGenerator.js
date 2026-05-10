@@ -151,6 +151,28 @@ function tealLine(text, y) {
     font-size="${fs}" fill="#3ECFB2" text-anchor="middle">${escXml(text)}</text>`;
 }
 
+// 좌측 정렬 큰 텍스트 (일반 모드 내부 카드용 — 박스 없음)
+// returns { svg, endY }
+function heroLeft(heroLines, startY = 100) {
+  const lines = (heroLines || []).slice(0, 3).filter(l => l?.text);
+  if (!lines.length) return { svg: '', endY: startY };
+
+  const FS0 = clampFontSize(lines[0].text, 84, 960);
+  let curY = startY + Math.floor(FS0 * 0.82);
+
+  const svg = lines.map((line, i) => {
+    const fs = i === 0 ? FS0 : clampFontSize(line.text, Math.floor(FS0 * 0.88), 960);
+    const baseline = curY;
+    curY += Math.floor(fs * 1.3);
+    return `<text x="60" y="${baseline}"
+      font-family="'Pretendard ExtraBold','Pretendard',sans-serif"
+      font-weight="800" font-size="${fs}" letter-spacing="-2"
+      fill="${line.color || '#1A1A1A'}">${escXml(line.text)}</text>`;
+  }).join('\n');
+
+  return { svg, endY: curY };
+}
+
 // thin divider
 function divider(y) {
   return `<rect x="200" y="${y}" width="680" height="1.5" fill="#1A1A1A" fill-opacity="0.12"/>`;
@@ -215,7 +237,7 @@ function card1({ volNum, date, subtitle, heroLines, badgeLabel, coverImg }) {
 function card2({ heroLines, summaryLines, mainImg }) {
   const parts = [mintBg(), bars()];
 
-  const box = heroBox(heroLines, 70);
+  const box = heroLeft(heroLines, 100);
   parts.push(box.svg);
 
   const photo = centeredPhoto(mainImg, box.endY + 44, 460);
@@ -242,7 +264,7 @@ function card2({ heroLines, summaryLines, mainImg }) {
 function card3({ heroLines, subtitleLines, mintBoxLines, sourceText, spreadImg1 }) {
   const parts = [mintBg(), bars()];
 
-  const box = heroBox(heroLines, 70);
+  const box = heroLeft(heroLines, 100);
   parts.push(box.svg);
 
   const photo = centeredPhoto(spreadImg1, box.endY + 44, 450);
@@ -272,35 +294,31 @@ function card3({ heroLines, subtitleLines, mintBoxLines, sourceText, spreadImg1 
 function card4({ heroLines, bullets, calloutLines, sideImg }) {
   const parts = [mintBg(), bars()];
 
-  const box = heroBox(heroLines, 70);
+  const box = heroLeft(heroLines, 100);
   parts.push(box.svg);
 
   let contentY = box.endY + 44;
 
-  // 사진 있으면 작게
   if (sideImg) {
-    const photo = centeredPhoto(sideImg, contentY, 280);
+    const photo = centeredPhoto(sideImg, contentY, 300);
     parts.push(photo.svg);
-    contentY = photo.endY + 44;
+    contentY = photo.endY + 48;
   }
 
-  // 버블 리스트
-  const bulletItems = (bullets || []).slice(0, 4);
-  const BULLET_H = 66;
-  const BULLET_W = 860;
-  const BULLET_X = (1080 - BULLET_W) / 2;
-
+  // 간결한 텍스트 리스트 (말풍선 제거)
+  const bulletItems = (bullets || []).slice(0, 3);
   bulletItems.forEach((text, i) => {
-    const y = contentY + i * BULLET_H;
-    const fs = clampFontSize(text, 26, BULLET_W - 40);
-    parts.push(`<rect x="${BULLET_X}" y="${y}" width="${BULLET_W}" height="52" rx="26"
-      fill="white" fill-opacity="0.60"/>
-    <rect x="${BULLET_X}" y="${y}" width="5" height="52" rx="3" fill="#3ECFB2"/>
-    <text x="${BULLET_X + 28}" y="${y + 34}" font-family="'LeeSeoyun','Apple SD Gothic Neo',sans-serif"
+    const y = contentY + i * 58;
+    const fs = clampFontSize(text, 26, 900);
+    parts.push(`<text x="60" y="${y + 36}"
+      font-family="'LeeSeoyun','Apple SD Gothic Neo',sans-serif"
+      font-size="${fs}" fill="#3ECFB2">· </text>
+    <text x="88" y="${y + 36}"
+      font-family="'LeeSeoyun','Apple SD Gothic Neo',sans-serif"
       font-size="${fs}" fill="#1A1A1A">${escXml(text)}</text>`);
   });
 
-  const afterBullets = contentY + bulletItems.length * BULLET_H + 40;
+  const afterBullets = contentY + bulletItems.length * 58 + 36;
 
   const insightText = calloutLines?.[0] || null;
   if (insightText) {
@@ -316,7 +334,7 @@ function card4({ heroLines, bullets, calloutLines, sideImg }) {
 function card5({ heroLines, summaryLines, centerImg }) {
   const parts = [mintBg(), bars()];
 
-  const box = heroBox(heroLines, 70);
+  const box = heroLeft(heroLines, 100);
   parts.push(box.svg);
 
   const photo = centeredPhoto(centerImg, box.endY + 44, 450);
@@ -422,30 +440,21 @@ function cardPhrase(num, { heroLines, summaryLines, bullets, badgeLabel }) {
     }).join('\n');
   };
 
-  const blackBox2 = (x, y, w, lines) => {
-    const h = Math.max(72, lines.length * 46 + 30);
-    return `<rect x="${x}" y="${y}" width="${w}" height="${h}" rx="16" fill="#1A1A1A"/>
-    ${lines.map((t, i) => `<text x="${x + 30}" y="${y + 46 + i * 46}"
+  const whiteBox = (x, y, w, lines) => {
+    const h = Math.max(80, lines.length * 50 + 36);
+    return `<rect x="${x}" y="${y}" width="${w}" height="${h}" rx="16"
+      fill="white" stroke="#C8EDE3" stroke-width="1.5"/>
+    ${lines.map((t, i) => `<text x="${x + 32}" y="${y + 52 + i * 50}"
       font-family="${i === 0
-        ? "'Pretendard ExtraBold','Pretendard',sans-serif\" font-weight=\"800\" font-size=\"28\" fill=\"white\""
-        : "'LeeSeoyun','Apple SD Gothic Neo',sans-serif\" font-size=\"24\" fill=\"#888888\""}">${escXml(t)}</text>`
+        ? "'Pretendard ExtraBold','Pretendard',sans-serif\" font-weight=\"800\" font-size=\"28\" fill=\"#1A1A1A\""
+        : "'LeeSeoyun','Apple SD Gothic Neo',sans-serif\" font-size=\"24\" fill=\"#666666\""}">${escXml(t)}</text>`
     ).join('\n')}`;
   };
-
-  const whiteBullets = (x, y, w, items) =>
-    (items || []).slice(0, 3).map((t, i) => `
-    <rect x="${x}" y="${y + i * 72}" width="${w}" height="56" rx="28"
-      fill="white" stroke="#D5EDE9" stroke-width="1.5"/>
-    <text x="${x + 28}" y="${y + 34 + i * 72}"
-      font-family="'LeeSeoyun','Apple SD Gothic Neo',sans-serif"
-      font-size="24" fill="#1A1A1A">${escXml(t)}</text>`).join('\n');
 
   if (style === 'A') {
     const PHRASE_Y = 230;
     const bbY = Math.max(570, PHRASE_Y + heroBlockH + 60);
     const bbLines = (summaryLines || []).slice(0, 2);
-    const bbH = Math.max(72, bbLines.length * 46 + 30);
-    const bullY = bbY + bbH + 44;
     return svgWrap(`
     ${BG}
     ${bars()}
@@ -453,8 +462,7 @@ function cardPhrase(num, { heroLines, summaryLines, bullets, badgeLabel }) {
       font-size="19" fill="#3ECFB2" letter-spacing="1">컬렉션 ${numStr}</text>
     <rect x="60" y="98" width="64" height="2" fill="#3ECFB2" fill-opacity="0.5"/>
     ${phraseLeft(PHRASE_Y)}
-    ${bbLines.length ? blackBox2(60, bbY, 960, bbLines) : ''}
-    ${bullets?.length ? whiteBullets(60, bullY, 960, bullets) : ''}
+    ${bbLines.length ? whiteBox(60, bbY, 960, bbLines) : ''}
     ${footer()}`);
   }
 
@@ -465,8 +473,6 @@ function cardPhrase(num, { heroLines, summaryLines, bullets, badgeLabel }) {
     const divY = Math.max(580, PHRASE_Y + cHeroH + 50);
     const bbY = divY + 40;
     const bbLines = (summaryLines || []).slice(0, 2);
-    const bbH = Math.max(72, bbLines.length * 46 + 30);
-    const bullY = bbY + bbH + 44;
     return svgWrap(`
     ${BG}
     ${bars()}
@@ -475,25 +481,14 @@ function cardPhrase(num, { heroLines, summaryLines, bullets, badgeLabel }) {
     <rect x="400" y="100" width="280" height="2" fill="#3ECFB2" fill-opacity="0.4"/>
     ${phraseCenter(PHRASE_Y, cfs)}
     <rect x="60" y="${divY}" width="960" height="1.5" fill="#C8E8E2"/>
-    ${bbLines.length ? `<rect x="${bbLines.length > 1 ? 60 : 160}" y="${bbY}" width="${bbLines.length > 1 ? 960 : 760}" height="${bbH}" rx="16" fill="#1A1A1A"/>
-    ${bbLines.map((t, i) => {
-      const bx = bbLines.length > 1 ? 90 : 190;
-      return `<text x="${bx}" y="${bbY + 46 + i * 46}"
-        font-family="${i === 0
-          ? "'Pretendard ExtraBold','Pretendard',sans-serif\" font-weight=\"800\" font-size=\"28\" fill=\"white\""
-          : "'LeeSeoyun','Apple SD Gothic Neo',sans-serif\" font-size=\"24\" fill=\"#888888\""}">${escXml(t)}</text>`;
-    }).join('\n')}` : ''}
-    ${bullets?.length ? whiteBullets(bbLines.length > 1 ? 60 : 160, bullY, bbLines.length > 1 ? 960 : 760, bullets) : ''}
+    ${bbLines.length ? whiteBox(60, bbY, 960, bbLines) : ''}
     ${footer()}`);
   }
 
   // Style C
   const PHRASE_Y = 210;
-  const cardY = Math.max(560, PHRASE_Y + heroBlockH + 60);
   const bbLines = (summaryLines || []).slice(0, 2);
-  const cardH = Math.max(120, bbLines.length * 46 + (bullets?.length ? bullets.slice(0, 3).length * 72 + 60 : 30));
-  const innerPad = 36;
-  const bullY = cardY + innerPad + Math.max(72, bbLines.length * 46 + 30) + 28;
+  const bbY = Math.max(560, PHRASE_Y + heroBlockH + 60);
   return svgWrap(`
   ${BG}
   ${bars()}
@@ -501,17 +496,7 @@ function cardPhrase(num, { heroLines, summaryLines, bullets, badgeLabel }) {
     font-size="19" fill="#3ECFB2" letter-spacing="1">컬렉션 ${numStr}</text>
   <rect x="60" y="98" width="64" height="2" fill="#3ECFB2" fill-opacity="0.5"/>
   ${phraseLeft(PHRASE_Y)}
-  <rect x="60" y="${cardY}" width="960" height="${cardH}" rx="24" fill="#1A1A1A"/>
-  ${bbLines.map((t, i) => `<text x="90" y="${cardY + innerPad + 10 + (i === 0 ? 36 : 82)}"
-    font-family="${i === 0
-      ? "'Pretendard ExtraBold','Pretendard',sans-serif\" font-weight=\"800\" font-size=\"28\" fill=\"white\""
-      : "'LeeSeoyun','Apple SD Gothic Neo',sans-serif\" font-size=\"24\" fill=\"#888888\""}">${escXml(t)}</text>`).join('\n')}
-  ${bullets?.length ? (bullets || []).slice(0, 3).map((t, i) => `
-  <rect x="84" y="${bullY + i * 72}" width="912" height="56" rx="28"
-    fill="white" fill-opacity="0.08" stroke="white" stroke-opacity="0.12" stroke-width="1"/>
-  <text x="112" y="${bullY + 34 + i * 72}"
-    font-family="'LeeSeoyun','Apple SD Gothic Neo',sans-serif"
-    font-size="24" fill="#CCCCCC">${escXml(t)}</text>`).join('\n') : ''}
+  ${bbLines.length ? whiteBox(60, bbY, 960, bbLines) : ''}
   ${footer()}`);
 }
 
