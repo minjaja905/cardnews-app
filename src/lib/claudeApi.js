@@ -3,7 +3,7 @@ import { MEME_SYSTEM_PROMPT, PHRASE_COLLECTION_SYSTEM_PROMPT } from '../data/mem
 import { GENERAL_SYSTEM_PROMPT } from '../data/generalRules';
 import { PORTFOLIO_SYSTEM_PROMPT } from '../data/portfolioRules';
 
-const MODEL = 'claude-haiku-4-5-20251001';
+const MODEL = 'claude-sonnet-4-6';
 const MODEL_HEAVY = 'claude-sonnet-4-6';
 
 async function callClaude(systemPrompt, userMsg, retries = 2) {
@@ -12,7 +12,7 @@ async function callClaude(systemPrompt, userMsg, retries = 2) {
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
       model: MODEL,
-      max_tokens: 4096,
+      max_tokens: 8192,
       system: systemPrompt,
       messages: [{ role: 'user', content: userMsg }],
     }),
