@@ -16,7 +16,7 @@ const MODES = [
     emoji: '🔥',
     title: '밈 카드뉴스',
     subtitle: '김밈지 시리즈',
-    desc: '요즘 핫한 밈을 6장 카드뉴스로\n2030 여성이 저장하고 싶은 콘텐츠',
+    desc: '요즘 핫한 밈으로 만든 카드뉴스',
     tags: ['위트 · 공감', '브랜드 활용법', '트위터 감성'],
     color: '#3ECFB2',
     grad: 'from-[#AEEADB] to-[#F0FDF9]',
@@ -26,7 +26,7 @@ const MODES = [
     emoji: '📋',
     title: '일반 카드뉴스',
     subtitle: '정보 · 트렌드 · 팁',
-    desc: '어떤 주제든 깔끔하게 정리\n저장욕구 폭발하는 정보성 콘텐츠',
+    desc: '어떤 주제든 깔끔하게 정리\n저장욕구 폭발하는 정보성 카드뉴스',
     tags: ['실용 팁', '트렌드 분석', '인사이트 정리'],
     color: '#6366F1',
     grad: 'from-[#C7D2FE] to-[#F5F3FF]',
@@ -36,7 +36,7 @@ const MODES = [
     emoji: '🗂',
     title: '포트폴리오 카드뉴스',
     subtitle: '시스템화 시리즈',
-    desc: '내 작업을 SNS에서 정기 발행\n포폴은 줘야 읽히지만 카드뉴스는 찾아옵니다',
+    desc: '작업물 관련 포트폴리오 카드뉴스',
     tags: ['퍼스널 브랜딩', '프로젝트 쇼케이스', '시스템화 기록'],
     color: '#F59E0B',
     grad: 'from-[#FCD34D] to-[#FFFBEB]',
@@ -62,7 +62,7 @@ export default function Home() {
         <div className="text-center mb-12">
           <h1 className="text-4xl font-extrabold text-gray-900 mb-4 leading-tight">
             인스타 카드뉴스,<br/>
-            <span style={{ color: '#3ECFB2' }}>AI가 써드릴게요.</span>
+            <span style={{ color: '#3ECFB2' }}>자동 생성기</span>
           </h1>
           <p className="text-gray-400 text-base">
             주제 입력 → 스타일 선택 → 3가지 카피 비교 → SVG/PNG 다운로드
@@ -108,7 +108,7 @@ export default function Home() {
         {/* 바로가기 */}
         <div className="flex items-center gap-4 mt-2">
           <div className="flex-1 h-px bg-gray-200" />
-          <span className="text-xs text-gray-400 whitespace-nowrap">이미지 있으세요?</span>
+          <span className="text-xs text-gray-400 whitespace-nowrap"> 이미지 넣고 게시글만 작성하기 </span>
           <div className="flex-1 h-px bg-gray-200" />
         </div>
         <button

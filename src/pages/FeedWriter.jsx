@@ -22,36 +22,44 @@ export default function FeedWriter() {
   const [error, setError] = useState('');
   const [copied, setCopied] = useState(false);
 
-  const [imagePreview, setImagePreview] = useState(null);
+  const [imagePreviews, setImagePreviews] = useState([]);
   const [parseLoading, setParseLoading] = useState(false);
   const fileInputRef = useRef(null);
 
-  function handleImageFile(file) {
-    if (!file || !file.type.startsWith('image/')) return;
-    const reader = new FileReader();
-    reader.onload = async (e) => {
-      const dataUrl = e.target.result;
-      setImagePreview(dataUrl);
-      setParseLoading(true);
-      setError('');
-      try {
-        const mediaType = file.type;
-        const base64 = dataUrl.split(',')[1];
-        const info = await parseImageToPortfolioInfo(base64, mediaType);
-        if (info.seriesNum) setSeriesNum(info.seriesNum);
-        if (info.projectName) setProjectName(info.projectName);
-        if (info.part) setPart(info.part);
-        if (info.problem) setProblem(info.problem);
-        if (info.solution) setSolution(info.solution);
-        if (info.impacts?.length) setImpacts([...info.impacts, '', ''].slice(0, 3));
-        if (info.tools?.length) setTools(info.tools.join(', '));
-      } catch (e) {
-        setError('이미지 분석 실패: ' + e.message);
-      } finally {
-        setParseLoading(false);
-      }
-    };
-    reader.readAsDataURL(file);
+  function handleImageFiles(files) {
+    if (!files || files.length === 0) return;
+    const imageFiles = Array.from(files).filter(f => f.type.startsWith('image/'));
+    if (imageFiles.length === 0) return;
+
+    const shouldParse = imagePreviews.length === 0;
+
+    imageFiles.forEach((file, idx) => {
+      const reader = new FileReader();
+      reader.onload = async (e) => {
+        const dataUrl = e.target.result;
+        setImagePreviews(prev => [...prev, dataUrl]);
+
+        if (shouldParse && idx === 0) {
+          setParseLoading(true);
+          setError('');
+          try {
+            const info = await parseImageToPortfolioInfo(dataUrl.split(',')[1], file.type);
+            if (info.seriesNum) setSeriesNum(info.seriesNum);
+            if (info.projectName) setProjectName(info.projectName);
+            if (info.part) setPart(info.part);
+            if (info.problem) setProblem(info.problem);
+            if (info.solution) setSolution(info.solution);
+            if (info.impacts?.length) setImpacts([...info.impacts, '', ''].slice(0, 3));
+            if (info.tools?.length) setTools(info.tools.join(', '));
+          } catch (e) {
+            setError('이미지 분석 실패: ' + e.message);
+          } finally {
+            setParseLoading(false);
+          }
+        }
+      };
+      reader.readAsDataURL(file);
+    });
   }
 
   async function handleGenerate() {
@@ -105,7 +113,7 @@ export default function FeedWriter() {
           <div
             onClick={() => fileInputRef.current?.click()}
             onDragOver={e => e.preventDefault()}
-            onDrop={e => { e.preventDefault(); handleImageFile(e.dataTransfer.files[0]); }}
+            onDrop={e => { e.preventDefault(); handleImageFiles(e.dataTransfer.files); }}
             className="relative cursor-pointer rounded-2xl border-2 border-dashed border-gray-200 hover:border-[#3ECFB2] transition-all overflow-hidden"
             style={{ minHeight: 120 }}
           >
@@ -113,31 +121,40 @@ export default function FeedWriter() {
               ref={fileInputRef}
               type="file"
               accept="image/*"
+              multiple
               className="hidden"
-              onChange={e => handleImageFile(e.target.files[0])}
+              onChange={e => { handleImageFiles(e.target.files); e.target.value = ''; }}
             />
-            {imagePreview ? (
-              <div className="flex items-center gap-4 p-4">
-                <img src={imagePreview} alt="업로드된 카드" className="w-20 h-auto rounded-xl object-cover shadow-sm" />
-                <div className="flex-1">
-                  {parseLoading ? (
-                    <div className="flex items-center gap-2">
-                      <div className="w-4 h-4 rounded-full border-2 animate-spin flex-shrink-0" style={{ borderColor: primary, borderTopColor: 'transparent' }} />
-                      <span className="text-sm text-gray-500">이미지 분석 중...</span>
+            {imagePreviews.length > 0 ? (
+              <div className="p-4 flex flex-col gap-3">
+                <div className="flex flex-wrap gap-3">
+                  {imagePreviews.map((src, i) => (
+                    <div key={i} className="relative group">
+                      <img src={src} alt={`카드 ${i + 1}`} className="w-20 h-20 rounded-xl object-cover shadow-sm" />
+                      <button
+                        onClick={e => { e.stopPropagation(); setImagePreviews(prev => prev.filter((_, j) => j !== i)); }}
+                        className="absolute -top-1.5 -right-1.5 w-5 h-5 bg-gray-600 text-white rounded-full text-xs flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity leading-none"
+                      >
+                        ×
+                      </button>
                     </div>
-                  ) : (
-                    <div>
-                      <p className="text-sm font-medium text-gray-700">분석 완료</p>
-                      <p className="text-xs text-gray-400">다른 이미지로 바꾸려면 클릭</p>
-                    </div>
-                  )}
+                  ))}
+                  <div className="w-20 h-20 rounded-xl border-2 border-dashed border-gray-300 flex items-center justify-center text-gray-400 text-xl font-light">+</div>
                 </div>
+                {parseLoading ? (
+                  <div className="flex items-center gap-2">
+                    <div className="w-4 h-4 rounded-full border-2 animate-spin flex-shrink-0" style={{ borderColor: primary, borderTopColor: 'transparent' }} />
+                    <span className="text-sm text-gray-500">첫 번째 이미지 분석 중...</span>
+                  </div>
+                ) : (
+                  <p className="text-xs text-gray-400">클릭하거나 드래그로 이미지 추가 — 썸네일 위에서 X로 삭제</p>
+                )}
               </div>
             ) : (
               <div className="flex flex-col items-center justify-center gap-2 py-8">
                 <span className="text-2xl">🖼️</span>
                 <p className="text-sm font-medium text-gray-500">카드 이미지 업로드</p>
-                <p className="text-xs text-gray-400">클릭하거나 드래그 — AI가 내용을 자동으로 파악해요</p>
+                <p className="text-xs text-gray-400">클릭하거나 드래그 — 여러 장 선택 가능, AI가 첫 장을 자동 분석</p>
               </div>
             )}
           </div>

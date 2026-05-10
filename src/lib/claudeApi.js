@@ -1,5 +1,5 @@
 // Claude API 연동 — 밈/일반/포트폴리오 카드뉴스 텍스트 3-variation 생성
-import { MEME_SYSTEM_PROMPT } from '../data/memeRules';
+import { MEME_SYSTEM_PROMPT, PHRASE_COLLECTION_SYSTEM_PROMPT } from '../data/memeRules';
 import { GENERAL_SYSTEM_PROMPT } from '../data/generalRules';
 import { PORTFOLIO_SYSTEM_PROMPT } from '../data/portfolioRules';
 
@@ -306,6 +306,23 @@ export async function generatePortfolioFeed({ seriesNum, projectName, part, prob
 위 내용으로 인스타그램 피드 글을 작성해주세요.`;
 
   return callClaudeText(systemPrompt, userMsg);
+}
+
+// ── 유행어 컬렉션 3-variation 생성 ────────────────────────────────────────────
+export async function generatePhraseVariations({ topic, details, volNum, date }) {
+  const userMsg = `밈/인물 이름: "${topic}"
+Vol 번호: ${volNum || '01'}
+날짜: ${date || ''}
+${details ? `유행어 컬렉션 설명: ${details}` : ''}
+
+위 유행어 목록으로 컬렉션 카드뉴스 텍스트를 3가지 스타일(A-위트, B-인포, C-감성)로 생성해주세요.
+반드시 JSON만 반환하고, 마크다운 코드블록 없이 응답하세요.`;
+
+  const result = await callClaude(PHRASE_COLLECTION_SYSTEM_PROMPT, userMsg);
+  if (!result.variations || !Array.isArray(result.variations)) {
+    throw new Error('AI 응답 구조 오류 — variations 배열을 찾을 수 없습니다.');
+  }
+  return result.variations;
 }
 
 // ── 하위 호환 (기존 코드에서 사용하는 경우) ────────────────────────────────────

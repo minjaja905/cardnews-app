@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback, memo } from 'react';
 import { useAppStore } from '../store/useAppStore';
-import { generateMemeVariations } from '../lib/claudeApi';
-import { generateCard, makeDefaultParams } from '../lib/svgGenerator';
+import { generateMemeVariations, generatePhraseVariations } from '../lib/claudeApi';
+import { generateCard, generatePhraseCard, makeDefaultParams } from '../lib/svgGenerator';
 import { applyStyle, COLOR_THEMES } from '../data/styles';
 import { downloadOne, downloadZip } from '../lib/export';
 import CardPreview from '../components/CardPreview';
@@ -13,7 +13,8 @@ import CopyVariations from '../components/CopyVariations';
 
 // 기본 6장 라벨 — 추가 페이지는 번호로 표시
 const BASE_LABELS = ['커버', '유래', '확산', '이럴때', '브랜드', '마무리'];
-const getLabel = (n) => BASE_LABELS[n - 1] ?? `추가${n - 6}`;
+const getPhraseLabel = (n) => n === 1 ? '커버' : `유행어${n - 1}`;
+const getLabel = (n, phraseMode) => phraseMode ? getPhraseLabel(n) : (BASE_LABELS[n - 1] ?? `추가${n - 6}`);
 
 const STEPS = [
   { n: 1, label: '주제' },
@@ -42,9 +43,24 @@ function Inp({ style: s, ...rest }) {
 }
 
 // ── CardEditor — MemeWizard 밖에서 정의해야 리렌더 시 재마운트 방지 ──────────────
-const CardEditor = memo(function CardEditor({ n, params, onUpdate, coverImage, onCoverImageChange, primaryColor }) {
+const CardEditor = memo(function CardEditor({ n, params, onUpdate, coverImage, onCoverImageChange, primaryColor, phraseMode }) {
   const key = `card${n}`;
   const p = params?.[key] || {};
+
+  // 유행어 컬렉션 모드: 카드 2~7 전용 편집 UI
+  if (phraseMode && n >= 2) return (
+    <div className="flex flex-col gap-4">
+      <Field label="유행어 텍스트">
+        <HeroLineEditor lines={p.heroLines || []} onChange={v => onUpdate(key, 'heroLines', v)} />
+      </Field>
+      <Field label="뜻·설명 (2줄)">
+        <TextListEditor lines={p.summaryLines || []} onChange={v => onUpdate(key, 'summaryLines', v)} placeholder="설명" maxLines={2} />
+      </Field>
+      <Field label="사용 예시 (2-3개, 이모지 포함)">
+        <TextListEditor lines={p.bullets || []} onChange={v => onUpdate(key, 'bullets', v)} placeholder="예시" maxLines={3} />
+      </Field>
+    </div>
+  );
 
   if (n > 6) return (
     <div className="flex flex-col gap-4">
@@ -179,6 +195,7 @@ export default function MemeWizard() {
     aiLoading, setAiLoading, aiError, setAiError, setPage,
     cardCount, setCardCount,
     coverType, setCoverType,
+    phraseMode, setPhraseMode,
   } = store;
 
   const [activeCard, setActiveCard] = useState(1);
@@ -217,12 +234,17 @@ export default function MemeWizard() {
     if (!params) return;
     const built = {};
     for (const n of cardNums) {
-      const raw = generateCard(Math.min(n, 6), buildCardParams(n));
+      let raw;
+      if (phraseMode && n >= 2) {
+        raw = generatePhraseCard(n - 1, buildCardParams(n));
+      } else {
+        raw = generateCard(Math.min(n, 6), buildCardParams(n));
+      }
       built[n] = applyStyle(raw, style);
     }
     setSvgs(built);
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [params, images, topic, volNum, date, style, cardCount]);
+  }, [params, images, topic, volNum, date, style, cardCount, phraseMode]);
 
   useEffect(() => { rebuildSvgs(); }, [rebuildSvgs]);
 
@@ -232,7 +254,8 @@ export default function MemeWizard() {
     setAiError('');
     setAiLoading(true);
     try {
-      const vars = await generateMemeVariations({ topic, details, volNum, date });
+      const fn = phraseMode ? generatePhraseVariations : generateMemeVariations;
+      const vars = await fn({ topic, details, volNum, date });
       setVariations(vars);
       applyVariation(vars, 0);
       setStep(3);
@@ -331,7 +354,7 @@ export default function MemeWizard() {
 
   async function handleDownloadOne(n) {
     try {
-      await downloadOne({ svgString: svgs[n] || '', filename: `${n}_${getLabel(n)}.svg`, format: exportFormat });
+      await downloadOne({ svgString: svgs[n] || '', filename: `${n}_${getLabel(n, phraseMode)}.svg`, format: exportFormat });
     } catch (e) {
       alert('다운로드 실패: ' + e.message);
     }
@@ -428,6 +451,22 @@ export default function MemeWizard() {
                     onChange={e => setDetails(e.target.value)}
                     placeholder="예: 트위터에서 시작된 밈, CS 대화 스크린샷"
                   />
+                </Field>
+                <Field label="모드">
+                  <button
+                    onClick={() => {
+                      const next = !phraseMode;
+                      setPhraseMode(next);
+                      if (next && cardCount < 7) setCardCount(7);
+                      if (!next && cardCount === 7) setCardCount(6);
+                    }}
+                    className="w-full py-2.5 rounded-xl border text-sm font-medium transition-all text-left px-3"
+                    style={phraseMode
+                      ? { borderColor: primary, backgroundColor: `${primary}15`, color: primary }
+                      : { borderColor: '#E5E7EB', color: '#9CA3AF' }}
+                  >
+                    {phraseMode ? '✓ 컬렉션 모드 (아이템 1개당 1장)' : '컬렉션 모드'}
+                  </button>
                 </Field>
                 <Field label="커버 배경">
                   <div className="flex gap-2">
@@ -569,7 +608,7 @@ export default function MemeWizard() {
                               ? { backgroundColor: primary, color: 'white' }
                               : { backgroundColor: '#F3F4F6', color: '#6B7280' }}
                           >
-                            {n}. {getLabel(n)}
+                            {n}. {getLabel(n, phraseMode)}
                           </button>
                           {/* 삭제 버튼 (7번 이상만) */}
                           {n > 6 && (
@@ -601,6 +640,7 @@ export default function MemeWizard() {
                         coverImage={activeCard === 2 ? images.origin : images.cover}
                         onCoverImageChange={(v) => setImage(activeCard === 2 ? 'origin' : 'cover', v)}
                         primaryColor={primary}
+                        phraseMode={phraseMode}
                       />
                     </div>
                   </>
@@ -659,7 +699,7 @@ export default function MemeWizard() {
                       onClick={() => handleDownloadOne(n)}
                       className="flex items-center justify-between px-3 py-2 rounded-lg border border-gray-100 hover:border-gray-200 text-sm"
                     >
-                      <span className="text-gray-700">{n}. {getLabel(n)}</span>
+                      <span className="text-gray-700">{n}. {getLabel(n, phraseMode)}</span>
                       <span className="text-xs font-medium" style={{ color: primary }}>↓ {exportFormat.toUpperCase()}</span>
                     </button>
                   ))}
@@ -695,7 +735,7 @@ export default function MemeWizard() {
                     <CardPreview
                       svgString={svgs[n] || ''}
                       cardNum={n}
-                      label={`${n}. ${getLabel(n)}`}
+                      label={`${n}. ${getLabel(n, phraseMode)}`}
                       scale={PREVIEW_SCALE}
                     />
                   </div>

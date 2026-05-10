@@ -72,6 +72,10 @@ export const useAppStore = create(
       coverType: 'color', // 'color' | 'photo'
       setCoverType: (v) => set({ coverType: v }),
 
+      // ── 유행어 컬렉션 모드 ─────────────────────────────────────────────────
+      phraseMode: false,
+      setPhraseMode: (v) => set({ phraseMode: v }),
+
       // ── 프로젝트 시작 ─────────────────────────────────────────────────────
       startProject: (mode) =>
         set((state) => ({
@@ -82,6 +86,7 @@ export const useAppStore = create(
           volNum: '',
           date: defaultDate(),
           cardCount: 6,
+          phraseMode: false,
           aiLoading: false,
           aiError: '',
           variations: [],
@@ -100,6 +105,7 @@ export const useAppStore = create(
           details: '',
           volNum: '',
           cardCount: 6,
+          phraseMode: false,
           aiLoading: false,
           aiError: '',
           variations: [],
