@@ -172,11 +172,11 @@ export default function OOTDWizard() {
     <div className="min-h-screen bg-gray-50" style={{ fontFamily: "'Pretendard','Apple SD Gothic Neo',sans-serif" }}>
       {/* 헤더 */}
       <header className="bg-white border-b border-gray-100 sticky top-0 z-10">
-        <div className="max-w-screen-xl mx-auto px-6 h-14 flex items-center gap-3">
-          <button onClick={() => setPage('home')} className="text-sm text-gray-400 hover:text-gray-600">← 홈</button>
-          <span className="text-gray-200">|</span>
-          <span className="text-sm font-bold text-gray-900">OOTD 카드뉴스</span>
-          <span className="text-xs text-gray-400">— 사진 업로드 → 텍스트 입력 → 다운로드</span>
+        <div className="max-w-screen-xl mx-auto px-4 md:px-6 h-14 flex items-center gap-3 min-w-0">
+          <button onClick={() => setPage('home')} className="text-sm text-gray-400 hover:text-gray-600 flex-shrink-0">← 홈</button>
+          <span className="text-gray-200 flex-shrink-0">|</span>
+          <span className="text-sm font-bold text-gray-900 flex-shrink-0">OOTD 카드뉴스</span>
+          <span className="hidden sm:inline text-xs text-gray-400 truncate">— 사진 업로드 → 텍스트 입력 → 다운로드</span>
           <div className="flex-1" />
           <button
             onClick={() => setPage('feed')}
@@ -187,9 +187,9 @@ export default function OOTDWizard() {
         </div>
       </header>
 
-      <main className="max-w-screen-xl mx-auto px-6 py-6 flex gap-6">
+      <main className="max-w-screen-xl mx-auto px-4 md:px-6 py-6 flex flex-col md:flex-row gap-6">
         {/* ── 왼쪽 패널 ── */}
-        <div className="w-80 flex-shrink-0 flex flex-col gap-4 sticky top-[60px] self-start max-h-[calc(100vh-80px)] overflow-y-auto">
+        <div className="w-full md:w-80 md:flex-shrink-0 flex flex-col gap-4 md:sticky md:top-[60px] md:self-start md:max-h-[calc(100vh-80px)] md:overflow-y-auto">
 
           {/* 커버 편집 */}
           <div
@@ -390,7 +390,7 @@ export default function OOTDWizard() {
         </div>
 
         {/* ── 미리보기 ── */}
-        <div className="flex-1 bg-white rounded-2xl p-5 shadow-sm">
+        <div className="flex-1 bg-white rounded-2xl p-4 md:p-5 shadow-sm">
           <div className="flex items-center justify-between mb-4">
             <span className="font-bold text-gray-900">미리보기</span>
             <span className="text-xs text-gray-400">1080 × 1350 px</span>

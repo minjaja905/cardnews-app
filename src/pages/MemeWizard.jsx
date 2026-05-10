@@ -421,9 +421,9 @@ export default function MemeWizard() {
       </header>
 
       <main className="max-w-screen-xl mx-auto px-4 py-5">
-        <div className="flex gap-5">
+        <div className="flex flex-col md:flex-row gap-5">
           {/* ── 왼쪽 패널 ── */}
-          <div className="w-72 flex-shrink-0 flex flex-col gap-3 sticky top-[60px] self-start max-h-[calc(100vh-80px)] overflow-y-auto">
+          <div className="w-full md:w-72 md:flex-shrink-0 flex flex-col gap-3 md:sticky md:top-[60px] md:self-start md:max-h-[calc(100vh-80px)] md:overflow-y-auto">
 
             {/* STEP 1 */}
             {step === 1 && (
