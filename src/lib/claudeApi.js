@@ -3,20 +3,12 @@ import { MEME_SYSTEM_PROMPT, PHRASE_COLLECTION_SYSTEM_PROMPT } from '../data/mem
 import { GENERAL_SYSTEM_PROMPT } from '../data/generalRules';
 import { PORTFOLIO_SYSTEM_PROMPT } from '../data/portfolioRules';
 
-const API_KEY = import.meta.env.VITE_CLAUDE_API_KEY;
 const MODEL = 'claude-sonnet-4-6';
 
 async function callClaude(systemPrompt, userMsg, retries = 2) {
-  if (!API_KEY) throw new Error('VITE_CLAUDE_API_KEY 환경변수가 설정되지 않았습니다.');
-
-  const res = await fetch('https://api.anthropic.com/v1/messages', {
+  const res = await fetch('/api/claude', {
     method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'x-api-key': API_KEY,
-      'anthropic-version': '2023-06-01',
-      'anthropic-dangerous-direct-browser-access': 'true',
-    },
+    headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
       model: MODEL,
       max_tokens: 8192,
@@ -171,16 +163,9 @@ ${rawText}
 
 // ── plain text 응답용 헬퍼 ────────────────────────────────────────────────────
 async function callClaudeText(systemPrompt, userMsg, retries = 2) {
-  if (!API_KEY) throw new Error('VITE_CLAUDE_API_KEY 환경변수가 설정되지 않았습니다.');
-
-  const res = await fetch('https://api.anthropic.com/v1/messages', {
+  const res = await fetch('/api/claude', {
     method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'x-api-key': API_KEY,
-      'anthropic-version': '2023-06-01',
-      'anthropic-dangerous-direct-browser-access': 'true',
-    },
+    headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
       model: MODEL,
       max_tokens: 1024,
@@ -208,16 +193,9 @@ async function callClaudeText(systemPrompt, userMsg, retries = 2) {
 
 // ── 이미지 → 포트폴리오 정보 추출 (Vision) ───────────────────────────────────
 export async function parseImageToPortfolioInfo(base64, mediaType) {
-  if (!API_KEY) throw new Error('VITE_CLAUDE_API_KEY 환경변수가 설정되지 않았습니다.');
-
-  const res = await fetch('https://api.anthropic.com/v1/messages', {
+  const res = await fetch('/api/claude', {
     method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'x-api-key': API_KEY,
-      'anthropic-version': '2023-06-01',
-      'anthropic-dangerous-direct-browser-access': 'true',
-    },
+    headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
       model: MODEL,
       max_tokens: 1024,
@@ -333,8 +311,6 @@ export async function generateDraft({ memeName, memoContext }) {
 
 // ── 오늘의 카드뉴스 주제 리서치 (web_search 도구 활용) ──────────────────────────
 export async function researchTopics() {
-  if (!API_KEY) throw new Error('VITE_CLAUDE_API_KEY 환경변수가 설정되지 않았습니다.');
-
   const today = new Date().toLocaleDateString('ko-KR', {
     year: 'numeric', month: 'long', day: 'numeric', weekday: 'long',
   });
@@ -382,16 +358,11 @@ export async function researchTopics() {
   let messages = [{ role: 'user', content: userMsg }];
 
   for (let turn = 0; turn < 8; turn++) {
-    const res = await fetch('https://api.anthropic.com/v1/messages', {
+    const res = await fetch('/api/claude', {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'x-api-key': API_KEY,
-        'anthropic-version': '2023-06-01',
-        'anthropic-beta': 'web-search-2025-03-05',
-        'anthropic-dangerous-direct-browser-access': 'true',
-      },
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
+        endpoint: 'web-search',
         model: MODEL,
         max_tokens: 4096,
         system: systemPrompt,
