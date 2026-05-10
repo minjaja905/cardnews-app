@@ -157,42 +157,57 @@ function divider(y) {
 }
 
 // ── CARD 1 — 커버 ─────────────────────────────────────────────────────────────
-function card1({ heroLines, subtitle, volNum, date, coverImg }) {
-  const parts = [];
+function card1({ volNum, date, subtitle, heroLines, badgeLabel, coverImg }) {
+  const safeHero = (heroLines || []).slice(0, 3);
+  const lineCount = safeHero.length;
 
-  if (coverImg) {
-    parts.push(`<image href="${coverImg}" x="0" y="0" width="1080" height="1350" preserveAspectRatio="xMidYMid slice"/>
-  <rect width="1080" height="1350" fill="#C8EDE3" fill-opacity="0.82"/>`);
-  } else {
-    parts.push(mintBg());
-  }
+  const heroSvg = safeHero.map((line, i) =>
+    `<text x="60" y="${268 + i * 140}"
+      font-family="'Pretendard ExtraBold','Pretendard',sans-serif"
+      font-weight="800" font-size="120" letter-spacing="-2"
+      fill="${line.color || '#1A1A1A'}">${escXml(line.text)}</text>`
+  ).join('\n');
 
-  parts.push(bars());
+  const badgeY = lineCount >= 3 ? 680 : 540;
+  const badgeCenterX = 85 + 196 / 2;
+  const badgeTextY = badgeY + 26;
+  const dividerY = badgeY + 55;
+  const subtitleY = dividerY + 30;
 
-  // vol / date 상단
-  if (date || volNum) {
-    const info = [date, volNum ? `vol.${String(volNum).padStart(2, '0')}` : ''].filter(Boolean).join(' · ');
-    parts.push(`<text x="540" y="52" font-family="'LeeSeoyun','Apple SD Gothic Neo',sans-serif"
-      font-size="20" fill="#3ECFB2" text-anchor="middle" letter-spacing="1">${escXml(info)}</text>`);
-  }
+  const badgeSvg = badgeLabel ? `
+  <rect x="85" y="${badgeY}" width="196" height="40" rx="20" fill="#3ECFB2"/>
+  <text x="${badgeCenterX}" y="${badgeTextY}"
+    font-family="'LeeSeoyun','Apple SD Gothic Neo',sans-serif"
+    font-size="18" fill="#FFFFFF" text-anchor="middle">${escXml(badgeLabel)}</text>
+  <text x="293" y="${badgeTextY}"
+    font-family="'LeeSeoyun','Apple SD Gothic Neo',sans-serif"
+    font-size="14" fill="#3ECFB2" text-anchor="start">♥♥</text>` : '';
 
-  // 김밈지 브랜딩
-  parts.push(`<text x="540" y="44" font-family="'LeeSeoyun','Apple SD Gothic Neo',sans-serif"
-    font-size="22" fill="#1A1A1A" text-anchor="middle">김밈지</text>`);
+  const body = `
+  ${coverImg
+    ? `<image href="${coverImg}" x="0" y="0" width="1080" height="1350" preserveAspectRatio="xMidYMid slice"/>`
+    : `<rect width="1080" height="1350" fill="#AEEADB"/>`}
+  <rect width="1080" height="1350" fill="#F7F7F5" fill-opacity="0.75"/>
+  ${bars()}
+  <text x="80" y="96"
+    font-family="'LeeSeoyun','Apple SD Gothic Neo',sans-serif"
+    font-size="28" fill="#000000" text-anchor="start">김밈지</text>
+  <rect x="80" y="110" width="66" height="3.5" fill="#3ECFB2"/>
+  <text x="833" y="89"
+    font-family="'LeeSeoyun','Apple SD Gothic Neo',sans-serif"
+    font-size="18" fill="#FFFFFF" text-anchor="end">이번 주 마케터가 주목한 밈</text>
+  <text x="870" y="109"
+    font-family="'LeeSeoyun','Apple SD Gothic Neo',sans-serif"
+    font-size="18" fill="#FFFFFF" text-anchor="end">${escXml(date || '')} · vol.${String(volNum || '').padStart(2, '0')}</text>
+  ${heroSvg}
+  ${badgeSvg}
+  <rect x="80" y="${dividerY}" width="920" height="1" fill="#E8E8E8"/>
+  ${subtitle ? `<text x="80" y="${subtitleY}"
+    font-family="'LeeSeoyun','Apple SD Gothic Neo',sans-serif"
+    font-size="22" fill="#1A1A1A">${escXml(subtitle)}</text>` : ''}
+  ${footer()}`;
 
-  const box = heroBox(heroLines, 90);
-  parts.push(box.svg);
-
-  // 구분선 + subtitle
-  const divY = box.endY + 40;
-  parts.push(divider(divY));
-  if (subtitle) {
-    parts.push(`<text x="540" y="${divY + 42}" font-family="'LeeSeoyun','Apple SD Gothic Neo',sans-serif"
-      font-size="28" fill="#444444" text-anchor="middle">${escXml(subtitle)}</text>`);
-  }
-
-  parts.push(footer());
-  return svgWrap(parts.join('\n'));
+  return svgWrap(body);
 }
 
 // ── CARD 2 — 유래 ─────────────────────────────────────────────────────────────

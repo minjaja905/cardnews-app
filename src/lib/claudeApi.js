@@ -3,7 +3,8 @@ import { MEME_SYSTEM_PROMPT, PHRASE_COLLECTION_SYSTEM_PROMPT } from '../data/mem
 import { GENERAL_SYSTEM_PROMPT } from '../data/generalRules';
 import { PORTFOLIO_SYSTEM_PROMPT } from '../data/portfolioRules';
 
-const MODEL = 'claude-sonnet-4-6';
+const MODEL = 'claude-haiku-4-5-20251001';
+const MODEL_HEAVY = 'claude-sonnet-4-6';
 
 async function callClaude(systemPrompt, userMsg, retries = 2) {
   const res = await fetch('/api/claude', {
@@ -11,7 +12,7 @@ async function callClaude(systemPrompt, userMsg, retries = 2) {
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
       model: MODEL,
-      max_tokens: 8192,
+      max_tokens: 2500,
       system: systemPrompt,
       messages: [{ role: 'user', content: userMsg }],
     }),
@@ -197,7 +198,7 @@ export async function parseImageToPortfolioInfo(base64, mediaType) {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
-      model: MODEL,
+      model: MODEL_HEAVY,
       max_tokens: 1024,
       system: `당신은 포트폴리오 카드뉴스 이미지를 분석하는 전문가입니다.
 카드뉴스 이미지에서 프로젝트 정보를 추출하여 JSON으로 반환합니다.
