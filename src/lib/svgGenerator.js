@@ -467,20 +467,16 @@ function cardPhrase(num, { heroLines, summaryLines, bullets, badgeLabel }) {
   }
 
   if (style === 'B') {
-    const cfs = clampFontSize(phraseText, 108, 960);
-    const cHeroH = heroCount * Math.floor(cfs * 1.3);
-    const PHRASE_Y = 260;
-    const divY = Math.max(580, PHRASE_Y + cHeroH + 50);
-    const bbY = divY + 40;
+    const PHRASE_Y = 230;
+    const bbY = Math.max(570, PHRASE_Y + heroBlockH + 60);
     const bbLines = (summaryLines || []).slice(0, 2);
     return svgWrap(`
     ${BG}
     ${bars()}
-    <text x="540" y="90" font-family="'LeeSeoyun','Apple SD Gothic Neo',sans-serif"
-      font-size="19" fill="#3ECFB2" text-anchor="middle" letter-spacing="2">컬렉션 ${numStr}</text>
-    <rect x="400" y="100" width="280" height="2" fill="#3ECFB2" fill-opacity="0.4"/>
-    ${phraseCenter(PHRASE_Y, cfs)}
-    <rect x="60" y="${divY}" width="960" height="1.5" fill="#C8E8E2"/>
+    <text x="60" y="88" font-family="'LeeSeoyun','Apple SD Gothic Neo',sans-serif"
+      font-size="19" fill="#3ECFB2" letter-spacing="1">컬렉션 ${numStr}</text>
+    <rect x="60" y="98" width="64" height="2" fill="#3ECFB2" fill-opacity="0.5"/>
+    ${phraseLeft(PHRASE_Y)}
     ${bbLines.length ? whiteBox(60, bbY, 960, bbLines) : ''}
     ${footer()}`);
   }
