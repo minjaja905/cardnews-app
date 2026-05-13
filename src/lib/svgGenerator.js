@@ -52,7 +52,7 @@ ${content}
 // ── 공통 컴포넌트 ─────────────────────────────────────────────────────────────
 
 function mintBg() {
-  return `<rect width="1080" height="1350" fill="#C8EDE3"/>`;
+  return `<rect width="1080" height="1350" fill="#EDF9F5"/>`;
 }
 
 function bars() {
@@ -65,6 +65,13 @@ function footer() {
         font-size="26" fill="#3ECFB2" text-anchor="middle">@minjaja.pdf</text>
   <text x="540" y="1304" font-family="'LeeSeoyun','Apple SD Gothic Neo',sans-serif"
         font-size="18" fill="#888888" text-anchor="middle">Content Marketer · Meme Curator</text>`;
+}
+
+function footerDark() {
+  return `<text x="540" y="1272" font-family="'LeeSeoyun','Apple SD Gothic Neo',sans-serif"
+        font-size="22" fill="rgba(255,255,255,0.85)" text-anchor="middle">@minjaja.pdf</text>
+  <text x="540" y="1300" font-family="'LeeSeoyun','Apple SD Gothic Neo',sans-serif"
+        font-size="16" fill="rgba(255,255,255,0.45)" text-anchor="middle">Content Marketer · Meme Curator</text>`;
 }
 
 // 검정 박스 — heroLines 포함, 박스 높이 자동
@@ -109,7 +116,7 @@ ${textSvg}`,
   };
 }
 
-// 중앙 정렬 사진
+// 중앙 정렬 사진 — 직사각형 (rx=0)
 function centeredPhoto(src, photoY, photoH = 460) {
   if (!src) return { svg: '', endY: photoY };
   const W = 800;
@@ -119,10 +126,8 @@ function centeredPhoto(src, photoY, photoH = 460) {
     svg: `<image href="${src}" x="${X}" y="${photoY}" width="${W}" height="${photoH}"
          preserveAspectRatio="xMidYMid slice" clip-path="url(#${clipId})"/>
   <clipPath id="${clipId}">
-    <rect x="${X}" y="${photoY}" width="${W}" height="${photoH}" rx="20"/>
-  </clipPath>
-  <rect x="${X}" y="${photoY}" width="${W}" height="${photoH}" rx="20"
-        fill="none" stroke="#FFFFFF" stroke-opacity="0.3" stroke-width="1.5"/>`,
+    <rect x="${X}" y="${photoY}" width="${W}" height="${photoH}" rx="0"/>
+  </clipPath>`,
     endY: photoY + photoH,
   };
 }
@@ -149,6 +154,98 @@ function tealLine(text, y) {
   return `<text x="540" y="${y}"
     font-family="'LeeSeoyun','Apple SD Gothic Neo',sans-serif"
     font-size="${fs}" fill="#3ECFB2" text-anchor="middle">${escXml(text)}</text>`;
+}
+
+// 흰색 원 배지 + 히어로 텍스트 (cards 2-5)
+// Figma 스펙: Pretendard Bold 70, text box Y=160
+// returns { svg, endY }
+function heroWithBadge(cardNum, heroLines, startY = 50) {
+  const badgeNum = cardNum - 1;
+  const cx = 540, cy = startY + 50, r = 40;
+  const badge = `<circle cx="${cx}" cy="${cy}" r="${r}" fill="white"/>
+<text x="${cx}" y="${cy + 16}" text-anchor="middle"
+  font-family="'Pretendard ExtraBold','Pretendard',sans-serif"
+  font-weight="800" font-size="42" fill="#1A1A1A">${badgeNum}</text>`;
+
+  const lines = (heroLines || []).slice(0, 3).filter(l => l?.text);
+  if (!lines.length) return { svg: badge, endY: cy + r + 10 };
+
+  const FS = 70;
+  const LH = 84;
+  // Figma text box top Y=160, first baseline = 160 + FS*0.82 ≈ 217
+  let curY = 160 + Math.floor(FS * 0.82);
+
+  const textSvg = lines.map((line) => {
+    const baseline = curY;
+    curY += LH;
+    const fill = line.color === '#3ECFB2' ? '#3ECFB2' : 'white';
+    return `<text x="540" y="${baseline}"
+      font-family="'Pretendard','sans-serif"
+      font-weight="700" font-size="${FS}" letter-spacing="-1"
+      fill="${fill}" text-anchor="middle">${escXml(line.text)}</text>`;
+  }).join('\n');
+
+  return { svg: badge + '\n' + textSvg, endY: curY };
+}
+
+// 힌트 박스 — 직사각형, LeeSeoyun 23
+// returns { svg, endY }
+function hintPill(text, y) {
+  if (!text) return { svg: '', endY: y };
+  const w = Math.min(960, String(text).length * 18 + 80);
+  const x = Math.floor((1080 - w) / 2);
+  return {
+    svg: `<rect x="${x}" y="${y}" width="${w}" height="56" rx="0"
+      fill="white" fill-opacity="0.7" stroke="#DDDDDD" stroke-width="1"/>
+<text x="540" y="${y + 36}" text-anchor="middle"
+  font-family="'LeeSeoyun','Apple SD Gothic Neo',sans-serif"
+  font-size="23" fill="#555555">${escXml(text)}</text>`,
+    endY: y + 56,
+  };
+}
+
+// 좌측 틸 인사이트 박스 — 직사각형, LeeSeoyun 23
+// returns { svg, endY }
+function tealInsightBox(text, y) {
+  if (!text) return { svg: '', endY: y };
+  const h = 68;
+  return {
+    svg: `<rect x="60" y="${y}" width="960" height="${h}" rx="0" fill="#3ECFB2" fill-opacity="0.25"/>
+<rect x="60" y="${y}" width="6" height="${h}" rx="0" fill="#3ECFB2"/>
+<text x="88" y="${y + 43}"
+  font-family="'LeeSeoyun','Apple SD Gothic Neo',sans-serif"
+  font-size="23" fill="#0F5C4E">${escXml(text)}</text>`,
+    endY: y + h,
+  };
+}
+
+// 흰색 설명 박스 — 직사각형, LeeSeoyun 23
+// returns { svg, endY }
+function whiteBlock(textLines, y, { fontSize = 23, lineH = 38 } = {}) {
+  if (!textLines?.length) return { svg: '', endY: y };
+  const allWrapped = textLines.flatMap(t => wrapText(String(t), 880, fontSize));
+  const h = allWrapped.length * lineH + 52;
+  const textSvg = allWrapped.map((t, i) =>
+    `<text x="100" y="${y + 38 + i * lineH}"
+      font-family="'LeeSeoyun','Apple SD Gothic Neo',sans-serif"
+      font-size="${fontSize}" fill="#333333">${escXml(t)}</text>`
+  ).join('\n');
+  return {
+    svg: `<rect x="60" y="${y}" width="960" height="${h}" rx="0"
+      fill="white" fill-opacity="0.85" stroke="#E0E0E0" stroke-width="1"/>
+${textSvg}`,
+    endY: y + h,
+  };
+}
+
+// 큰 teal 마무리 텍스트 (카드 3·5용)
+function tealBigText(text, y) {
+  if (!text) return '';
+  const fs = clampFontSize(text, 52, 900);
+  return `<text x="540" y="${y}"
+    font-family="'Pretendard ExtraBold','Pretendard',sans-serif"
+    font-weight="800" font-size="${fs}" letter-spacing="-1"
+    fill="#3ECFB2" text-anchor="middle">${escXml(text)}</text>`;
 }
 
 // 좌측 정렬 큰 텍스트 (일반 모드 내부 카드용 — 박스 없음)
@@ -179,180 +276,321 @@ function divider(y) {
 }
 
 // ── CARD 1 — 커버 ─────────────────────────────────────────────────────────────
+// 레퍼런스: 풀블리드 사진 + 아래로 갈수록 어두워지는 그라디언트
+// 히어로 텍스트 흰색 좌측정렬, 하단 영역, 민트 뱃지 텍스트 위
 function card1({ volNum, date, subtitle, heroLines, badgeLabel, coverImg }) {
-  const safeHero = (heroLines || []).slice(0, 3);
-  const lineCount = safeHero.length;
+  const safeHero = (heroLines || []).slice(0, 3).filter(l => l?.text);
 
+  // Figma 스펙: font-size=100, x=103, y=874 (first baseline)
+  const C1_FS = 100;
+  const C1_LH = 125;
   const heroSvg = safeHero.map((line, i) =>
-    `<text x="60" y="${268 + i * 140}"
+    `<text x="103" y="${874 + i * C1_LH}"
       font-family="'Pretendard ExtraBold','Pretendard',sans-serif"
-      font-weight="800" font-size="120" letter-spacing="-2"
-      fill="${line.color || '#1A1A1A'}">${escXml(line.text)}</text>`
+      font-weight="800" font-size="${C1_FS}" letter-spacing="-2"
+      fill="${line.color === '#3ECFB2' ? '#3ECFB2' : 'white'}">${escXml(line.text)}</text>`
   ).join('\n');
 
-  const badgeY = lineCount >= 3 ? 680 : 540;
-  const badgeCenterX = 85 + 196 / 2;
-  const badgeTextY = badgeY + 26;
-  const dividerY = badgeY + 55;
-  const subtitleY = dividerY + 30;
+  // 뱃지 — ascender(82px) + gap(12px) + height(40px) 위
+  const badgeY = 874 - Math.floor(C1_FS * 0.82) - 12 - 40;
+  const badgeW = badgeLabel ? Math.min(280, String(badgeLabel).length * 19 + 56) : 0;
+  const badgeSvg = badgeLabel ? `<rect x="103" y="${badgeY}" width="${badgeW}" height="40" rx="20" fill="#3ECFB2"/>
+<text x="${103 + badgeW / 2}" y="${badgeY + 27}"
+  font-family="'LeeSeoyun','Apple SD Gothic Neo',sans-serif"
+  font-size="18" fill="white" text-anchor="middle">${escXml(badgeLabel)}</text>` : '';
 
-  const badgeSvg = badgeLabel ? `
-  <rect x="85" y="${badgeY}" width="196" height="40" rx="20" fill="#3ECFB2"/>
-  <text x="${badgeCenterX}" y="${badgeTextY}"
-    font-family="'LeeSeoyun','Apple SD Gothic Neo',sans-serif"
-    font-size="18" fill="#FFFFFF" text-anchor="middle">${escXml(badgeLabel)}</text>
-  <text x="293" y="${badgeTextY}"
-    font-family="'LeeSeoyun','Apple SD Gothic Neo',sans-serif"
-    font-size="14" fill="#3ECFB2" text-anchor="start">♥♥</text>` : '';
+  const gradId = 'c1g';
+  const extraDefs = `<linearGradient id="${gradId}" x1="0" y1="0" x2="0" y2="1" gradientUnits="objectBoundingBox">
+    <stop offset="0%" stop-color="#000" stop-opacity="0.04"/>
+    <stop offset="38%" stop-color="#000" stop-opacity="0.18"/>
+    <stop offset="100%" stop-color="#000" stop-opacity="0.84"/>
+  </linearGradient>`;
 
   const body = `
-  ${coverImg
-    ? `<image href="${coverImg}" x="0" y="0" width="1080" height="1350" preserveAspectRatio="xMidYMid slice"/>`
-    : `<rect width="1080" height="1350" fill="#AEEADB"/>`}
-  <rect width="1080" height="1350" fill="#F7F7F5" fill-opacity="0.75"/>
-  ${bars()}
-  <text x="80" y="96"
-    font-family="'LeeSeoyun','Apple SD Gothic Neo',sans-serif"
-    font-size="28" fill="#000000" text-anchor="start">김밈지</text>
-  <rect x="80" y="110" width="66" height="3.5" fill="#3ECFB2"/>
-  <text x="833" y="89"
-    font-family="'LeeSeoyun','Apple SD Gothic Neo',sans-serif"
-    font-size="18" fill="#FFFFFF" text-anchor="end">이번 주 마케터가 주목한 밈</text>
-  <text x="870" y="109"
-    font-family="'LeeSeoyun','Apple SD Gothic Neo',sans-serif"
-    font-size="18" fill="#FFFFFF" text-anchor="end">${escXml(date || '')} · vol.${String(volNum || '').padStart(2, '0')}</text>
-  ${heroSvg}
-  ${badgeSvg}
-  <rect x="80" y="${dividerY}" width="920" height="1" fill="#E8E8E8"/>
-  ${subtitle ? `<text x="80" y="${subtitleY}"
-    font-family="'LeeSeoyun','Apple SD Gothic Neo',sans-serif"
-    font-size="22" fill="#1A1A1A">${escXml(subtitle)}</text>` : ''}
-  ${footer()}`;
+${coverImg
+  ? `<image href="${coverImg}" x="0" y="0" width="1080" height="1350" preserveAspectRatio="xMidYMid slice"/>`
+  : `<rect width="1080" height="1350" fill="#1A2820"/>`}
+<rect width="1080" height="1350" fill="url(#${gradId})"/>
+${bars()}
+<text x="103" y="88"
+  font-family="'LeeSeoyun','Apple SD Gothic Neo',sans-serif"
+  font-size="26" fill="white">김밈지</text>
+<text x="1020" y="74"
+  font-family="'LeeSeoyun','Apple SD Gothic Neo',sans-serif"
+  font-size="17" fill="rgba(255,255,255,0.65)" text-anchor="end">이번 주 마케터가 주목한 밈</text>
+<text x="1020" y="94"
+  font-family="'LeeSeoyun','Apple SD Gothic Neo',sans-serif"
+  font-size="17" fill="rgba(255,255,255,0.65)" text-anchor="end">${escXml(date || '')} · vol.${String(volNum || '').padStart(2, '0')}</text>
+${badgeSvg}
+${heroSvg}
+${footerDark()}`;
 
-  return svgWrap(body);
+  return svgWrap(body, extraDefs);
+}
+
+// ── 밈카드 공통: 배경 + 오버레이 ─────────────────────────────────────────────
+// bgImg 있으면 풀블리드 배경 + 다크 오버레이, 없으면 다크 플랫 배경
+function memeCardBg(bgImg) {
+  if (!bgImg) return `<rect width="1080" height="1350" fill="#1C2E29"/>`;
+  return `<image href="${bgImg}" x="0" y="0" width="1080" height="1350"
+    preserveAspectRatio="xMidYMid slice"/>
+<rect width="1080" height="1350" fill="black" fill-opacity="0.50"/>`;
+}
+
+// 커뮤니티 포스트 스타일 오버레이 카드
+// returns { svg, endY }
+function postCard(lines, y, { source = '' } = {}) {
+  if (!lines?.length) return { svg: '', endY: y };
+  const allWrapped = lines.flatMap(t => wrapText(String(t), 840, 28));
+  const h = allWrapped.length * 48 + (source ? 100 : 68);
+  const headerH = 52;
+
+  const textSvg = allWrapped.map((t, i) =>
+    `<text x="100" y="${y + headerH + 12 + (i + 1) * 48}"
+      font-family="'Pretendard','sans-serif" font-size="28" fill="#222222">${escXml(t)}</text>`
+  ).join('\n');
+
+  const sourceSvg = source
+    ? `<text x="100" y="${y + h - 24}" font-family="'Pretendard','sans-serif"
+        font-size="20" fill="#AAAAAA">${escXml(source)}</text>`
+    : '';
+
+  return {
+    svg: `<rect x="60" y="${y}" width="960" height="${h}" rx="16" fill="white" filter="url(#shadow)"/>
+<rect x="60" y="${y}" width="960" height="${headerH}" rx="0" fill="#F4F4F4"/>
+<rect x="60" y="${y}" width="960" height="${headerH}" rx="16" fill="#F4F4F4"/>
+<rect x="60" y="${y + headerH - 8}" width="960" height="8" fill="#F4F4F4"/>
+<text x="100" y="${y + 34}" font-family="'Pretendard ExtraBold','Pretendard',sans-serif"
+  font-weight="800" font-size="20" fill="#888888">커뮤니티 반응</text>
+<rect x="60" y="${y + headerH}" width="960" height="1" fill="#E8E8E8"/>
+${textSvg}
+${sourceSvg}`,
+    endY: y + h,
+  };
 }
 
 // ── CARD 2 — 유래 ─────────────────────────────────────────────────────────────
-// params: heroLines, summaryLines, mainImg  (leftBoxLines/rightBoxLines 무시)
-function card2({ heroLines, summaryLines, mainImg }) {
-  const parts = [mintBg(), bars()];
+// 레퍼런스: 사진 bg + 다크 오버레이 / 흰색 원 배지 중앙 상단
+// / 흰색 히어로 텍스트 중앙 / 커뮤니티 포스트 카드 오버레이 (직장인 대나무숲 스타일)
+function card2({ heroLines, memoLines, descLines, summaryLines, sourceText, mainImg }) {
+  const parts = [memeCardBg(mainImg), bars()];
 
-  const box = heroLeft(heroLines, 100);
-  parts.push(box.svg);
+  const hero = heroWithBadge(2, heroLines, 50);
+  parts.push(hero.svg);
 
-  const photo = centeredPhoto(mainImg, box.endY + 44, 460);
-  parts.push(photo.svg);
+  // 커뮤니티 포스트 카드 UI
+  const CARD_X = 70, CARD_W = 940, CARD_Y = Math.max(hero.endY + 36, 460);
+  const HEADER_H = 60, CONTENT_FS = 23, COMMENT_FS = 23, LH = 38, CLH = 34;
 
-  const bodyY = photo.endY + 52;
-  const lines = (summaryLines || []).slice(0, -1);
-  const lastLine = summaryLines?.length ? summaryLines[summaryLines.length - 1] : null;
+  const postLines = (memoLines?.length ? memoLines : summaryLines || []);
+  const commentLines = (descLines || []);
 
-  const body = bodyBlock(lines, bodyY, { fontSize: 29, color: '#333333', lineH: 46 });
-  parts.push(body.svg);
+  const postWrapped = postLines.flatMap(t => wrapText(String(t), CARD_W - 56, CONTENT_FS));
+  const commentWrapped = commentLines.flatMap(t => wrapText(String(t), CARD_W - 72, COMMENT_FS));
 
-  if (lastLine) {
-    const tealY = Math.max(body.endY + 36, bodyY + 36);
-    parts.push(tealLine(lastLine, tealY));
+  const postH = postWrapped.length * LH + 52;
+  const sep2H = commentWrapped.length > 0 ? 1 : 0;
+  const commentH = commentWrapped.length * CLH + (commentWrapped.length > 0 ? 40 : 0);
+  const srcH = sourceText ? 36 : 0;
+  const CARD_H = HEADER_H + postH + sep2H + commentH + srcH;
+
+  // card background + shadow — 직사각형
+  parts.push(`<rect x="${CARD_X}" y="${CARD_Y}" width="${CARD_W}" height="${CARD_H}" rx="0" fill="white" filter="url(#shadow)"/>`);
+
+  // gray nav header
+  parts.push(`<rect x="${CARD_X}" y="${CARD_Y}" width="${CARD_W}" height="${HEADER_H}" rx="0" fill="#F2F2F2"/>
+<text x="${CARD_X + 28}" y="${CARD_Y + 39}" font-family="sans-serif" font-size="26" fill="#999">‹</text>
+<text x="${CARD_X + CARD_W / 2}" y="${CARD_Y + 39}" text-anchor="middle"
+  font-family="'Pretendard ExtraBold','Pretendard',sans-serif" font-weight="800" font-size="21" fill="#1A1A1A">직장인 대나무숲</text>
+<text x="${CARD_X + CARD_W - 28}" y="${CARD_Y + 38}" text-anchor="end" font-family="sans-serif" font-size="22" fill="#999">☰</text>
+<rect x="${CARD_X}" y="${CARD_Y + HEADER_H}" width="${CARD_W}" height="1" fill="#E4E4E4"/>`);
+
+  // post body text
+  let ty = CARD_Y + HEADER_H + 34;
+  postWrapped.forEach(t => {
+    parts.push(`<text x="${CARD_X + 28}" y="${ty}"
+      font-family="'LeeSeoyun','Apple SD Gothic Neo',sans-serif" font-size="${CONTENT_FS}" fill="#1A1A1A">${escXml(t)}</text>`);
+    ty += LH;
+  });
+
+  // source / timestamp row
+  if (sourceText) {
+    parts.push(`<text x="${CARD_X + 28}" y="${ty + 14}"
+      font-family="'Pretendard','sans-serif" font-size="19" fill="#BBBBBB">${escXml(sourceText)}</text>`);
+    ty += 36;
   }
 
-  parts.push(footer());
+  // separator + comments
+  if (commentWrapped.length > 0) {
+    const sepY2 = CARD_Y + HEADER_H + postH + srcH;
+    parts.push(`<rect x="${CARD_X}" y="${sepY2}" width="${CARD_W}" height="1" fill="#EFEFEF"/>`);
+    let cy2 = sepY2 + 30;
+    commentWrapped.forEach(t => {
+      parts.push(`<text x="${CARD_X + 44}" y="${cy2}"
+        font-family="'LeeSeoyun','Apple SD Gothic Neo',sans-serif" font-size="${COMMENT_FS}" fill="#555555">${escXml(t)}</text>`);
+      cy2 += CLH;
+    });
+  }
+
+  const cardEndY = CARD_Y + CARD_H;
+
+  // caption label
+  parts.push(`<text x="540" y="${Math.min(cardEndY + 44, 1220)}"
+    font-family="'LeeSeoyun','Apple SD Gothic Neo',sans-serif"
+    font-size="20" fill="rgba(255,255,255,0.55)" text-anchor="middle">직장인 커뮤니티에 올라온 실</text>`);
+
+  parts.push(footerDark());
   return svgWrap(parts.join('\n'));
 }
 
 // ── CARD 3 — 확산 ─────────────────────────────────────────────────────────────
-// params: heroLines, subtitleLines, mintBoxLines, spreadImg1, spreadImg2(무시), sourceText
-function card3({ heroLines, subtitleLines, mintBoxLines, sourceText, spreadImg1 }) {
-  const parts = [mintBg(), bars()];
+// 레퍼런스: 사진 bg + 다크 오버레이 / 흰색 원 배지 "2" 중앙 상단
+// / 흰색 히어로 텍스트 중앙 / 3개 스크린샷 오버랩 레이아웃
+// mintBoxLines[0/1] → 캡션 라벨, mintBoxLines[2] → 하단 틸 텍스트
+function card3({ heroLines, subtitleLines, mintBoxLines, spreadImg1 }) {
+  const parts = [memeCardBg(spreadImg1), bars()];
 
-  const box = heroLeft(heroLines, 100);
-  parts.push(box.svg);
+  const hero = heroWithBadge(3, heroLines, 50);
+  parts.push(hero.svg);
 
-  const photo = centeredPhoto(spreadImg1, box.endY + 44, 450);
-  parts.push(photo.svg);
+  // 3개 스크린샷 플레이스홀더 — 레퍼런스 좌표 비율 유지
+  // left: x=100 y=572 w=357 h=462 / middle: x=404 y=508 w=301 h=322
+  // right: x=666 y=683 w=375 h=318
+  const screenshotY = Math.max(hero.endY + 28, 460);
+  const yOff = screenshotY - 508;
 
-  const bodyY = photo.endY + 52;
-  const body = bodyBlock(subtitleLines, bodyY, { fontSize: 29, color: '#333333', lineH: 46 });
-  parts.push(body.svg);
+  const screenshots = [
+    { x: 100, y: 572 + yOff, w: 357, h: 430, fill: '#303030' },
+    { x: 404, y: 508 + yOff, w: 301, h: 300, fill: '#3A3A3A' },
+    { x: 666, y: 648 + yOff, w: 375, h: 298, fill: '#2A2A2A' },
+  ];
 
-  const insightText = mintBoxLines?.[0] || null;
-  if (insightText) {
-    const tealY = Math.max(body.endY + 44, bodyY + 44);
-    parts.push(tealLine(insightText, tealY));
+  screenshots.forEach(({ x, y, w, h, fill }) => {
+    parts.push(`<rect x="${x}" y="${y}" width="${w}" height="${h}" rx="0" fill="${fill}"/>
+<text x="${x + w / 2}" y="${y + h / 2 + 10}" text-anchor="middle"
+  font-family="sans-serif" font-size="32" fill="#666">🖼</text>`);
+  });
+
+  // 우측 상단 캡션 라벨 (레퍼런스: translate(780.5, 572) w=214 h=43)
+  const capText = mintBoxLines?.[0] || subtitleLines?.[0] || '';
+  if (capText) {
+    const capX = 780, capY = 508 + yOff;
+    const capW = Math.min(290, String(capText).length * 15 + 48);
+    parts.push(`<rect x="${capX}" y="${capY}" width="${capW}" height="40" rx="8" fill="rgba(255,255,255,0.9)"/>
+<text x="${capX + 16}" y="${capY + 27}"
+  font-family="'LeeSeoyun','Apple SD Gothic Neo',sans-serif"
+  font-size="19" fill="#1A1A1A">${escXml(capText)}</text>`);
   }
 
-  if (sourceText) {
-    parts.push(`<text x="540" y="1220" font-family="'LeeSeoyun','Apple SD Gothic Neo',sans-serif"
-      font-size="16" fill="#AAAAAA" text-anchor="middle">${escXml(sourceText)}</text>`);
+  // subtitleLines[1/2] or mintBoxLines[1] → 하단 설명
+  const descLines = (subtitleLines || []).slice(1);
+  if (descLines.length > 0) {
+    const descY = screenshots[0].y + screenshots[0].h + 36;
+    descLines.slice(0, 2).forEach((t, i) => {
+      parts.push(`<text x="540" y="${descY + i * 38}"
+        font-family="'LeeSeoyun','Apple SD Gothic Neo',sans-serif"
+        font-size="22" fill="rgba(255,255,255,0.7)" text-anchor="middle">${escXml(t)}</text>`);
+    });
   }
 
-  parts.push(footer());
+  // 하단 큰 틸 텍스트
+  const closingLine = mintBoxLines?.[2] || mintBoxLines?.[1] || null;
+  if (closingLine) parts.push(tealBigText(closingLine, 1200));
+
+  // 출처
+  const srcLine = mintBoxLines?.[0] && subtitleLines?.length > 2 ? subtitleLines[subtitleLines.length - 1] : '';
+  if (srcLine) {
+    parts.push(`<text x="60" y="1240"
+      font-family="'LeeSeoyun','Apple SD Gothic Neo',sans-serif"
+      font-size="18" fill="rgba(255,255,255,0.4)">출처: ${escXml(srcLine)}</text>`);
+  }
+
+  parts.push(footerDark());
   return svgWrap(parts.join('\n'));
 }
 
 // ── CARD 4 — 이럴 때 ──────────────────────────────────────────────────────────
-// params: heroLines, bullets, calloutLines, sideImg, captionRight(무시)
+// params: heroLines, bullets (상황 4개), calloutLines[0]=마무리
 function card4({ heroLines, bullets, calloutLines, sideImg }) {
-  const parts = [mintBg(), bars()];
+  const parts = [memeCardBg(sideImg), bars()];
 
-  const box = heroLeft(heroLines, 100);
-  parts.push(box.svg);
+  const hero = heroWithBadge(4, heroLines, 60);
+  parts.push(hero.svg);
 
-  let contentY = box.endY + 44;
+  let y = hero.endY + 52;
 
-  if (sideImg) {
-    const photo = centeredPhoto(sideImg, contentY, 300);
-    parts.push(photo.svg);
-    contentY = photo.endY + 48;
-  }
-
-  // 간결한 텍스트 리스트 (말풍선 제거)
-  const bulletItems = (bullets || []).slice(0, 3);
+  const bulletItems = (bullets || []).slice(0, 4);
   bulletItems.forEach((text, i) => {
-    const y = contentY + i * 58;
-    const fs = clampFontSize(text, 26, 900);
-    parts.push(`<text x="60" y="${y + 36}"
-      font-family="'LeeSeoyun','Apple SD Gothic Neo',sans-serif"
-      font-size="${fs}" fill="#3ECFB2">· </text>
-    <text x="88" y="${y + 36}"
-      font-family="'LeeSeoyun','Apple SD Gothic Neo',sans-serif"
-      font-size="${fs}" fill="#1A1A1A">${escXml(text)}</text>`);
+    const rowY = y + i * 72;
+    const fs = clampFontSize(String(text), 28, 860);
+    parts.push(`<circle cx="84" cy="${rowY + 22}" r="11" fill="#3ECFB2"/>
+<text x="112" y="${rowY + 30}"
+  font-family="'Pretendard','sans-serif" font-size="${fs}" fill="#1A1A1A">${escXml(String(text))}</text>`);
   });
 
-  const afterBullets = contentY + bulletItems.length * 58 + 36;
+  const afterBullets = y + bulletItems.length * 72 + 20;
 
-  const insightText = calloutLines?.[0] || null;
-  if (insightText) {
-    parts.push(tealLine(insightText, afterBullets));
+  // 마무리 큰 teal 텍스트
+  const closingText = calloutLines?.[0] || null;
+  if (closingText) {
+    parts.push(divider(afterBullets + 28));
+    parts.push(tealBigText(closingText, Math.max(afterBullets + 110, 1100)));
   }
 
-  parts.push(footer());
+  parts.push(footerDark());
   return svgWrap(parts.join('\n'));
 }
 
 // ── CARD 5 — 브랜드 활용 ────────────────────────────────────────────────────────
-// params: heroLines, summaryLines, centerImg  (leftCaption/rightCaption 무시)
-function card5({ heroLines, summaryLines, centerImg }) {
-  const parts = [mintBg(), bars()];
+// params: heroLines, summaryLines (마지막 항목=큰 teal 마무리)
+function card5({ heroLines, summaryLines, leftCaption, rightCaption, centerImg }) {
+  const parts = [memeCardBg(centerImg), bars()];
 
-  const box = heroLeft(heroLines, 100);
-  parts.push(box.svg);
+  const hero = heroWithBadge(5, heroLines, 60);
+  parts.push(hero.svg);
 
-  const photo = centeredPhoto(centerImg, box.endY + 44, 450);
-  parts.push(photo.svg);
+  let y = hero.endY + 44;
 
-  const bodyY = photo.endY + 52;
-  const lines = (summaryLines || []).slice(0, -1);
-  const lastLine = summaryLines?.length ? summaryLines[summaryLines.length - 1] : null;
+  const allLines = summaryLines || [];
+  const bodyLines = allLines.length > 1 ? allLines.slice(0, -1) : allLines;
+  const closingLine = allLines.length > 1 ? allLines[allLines.length - 1] : null;
 
-  const body = bodyBlock(lines, bodyY, { fontSize: 29, color: '#333333', lineH: 46 });
-  parts.push(body.svg);
-
-  if (lastLine) {
-    const tealY = Math.max(body.endY + 40, bodyY + 40);
-    parts.push(tealLine(lastLine, tealY));
+  // 힌트 필 (summaryLines[0]가 짧으면 pill로)
+  if (bodyLines.length === 1 && bodyLines[0]?.length <= 30) {
+    const pill = hintPill(bodyLines[0], y);
+    parts.push(pill.svg);
+    y = pill.endY + 32;
+  } else if (bodyLines.length > 0) {
+    // 설명 박스
+    const box = whiteBlock(bodyLines, y, { fontSize: 28, lineH: 48 });
+    parts.push(box.svg);
+    y = box.endY + 44;
   }
 
-  parts.push(footer());
+  // leftCaption / rightCaption 있으면 2열 텍스트 박스
+  const lcArr = leftCaption || [];
+  const rcArr = rightCaption || [];
+  if (lcArr.length || rcArr.length) {
+    const rowH = Math.max(lcArr.length, rcArr.length) * 44 + 40;
+    if (lcArr.length) {
+      parts.push(`<rect x="60" y="${y}" width="460" height="${rowH}" rx="10" fill="white" fill-opacity="0.8"/>
+${lcArr.map((t, i) => `<text x="84" y="${y + 36 + i * 44}"
+  font-family="'LeeSeoyun','Apple SD Gothic Neo',sans-serif" font-size="24" fill="#333333">${escXml(t)}</text>`).join('\n')}`);
+    }
+    if (rcArr.length) {
+      parts.push(`<rect x="560" y="${y}" width="460" height="${rowH}" rx="10" fill="white" fill-opacity="0.8"/>
+${rcArr.map((t, i) => `<text x="584" y="${y + 36 + i * 44}"
+  font-family="'LeeSeoyun','Apple SD Gothic Neo',sans-serif" font-size="24" fill="#333333">${escXml(t)}</text>`).join('\n')}`);
+    }
+    y = y + rowH + 44;
+  }
+
+  // 큰 teal 마무리 텍스트
+  if (closingLine) {
+    parts.push(tealBigText(closingLine, Math.max(y + 60, 1100)));
+  }
+
+  parts.push(footerDark());
   return svgWrap(parts.join('\n'));
 }
 
@@ -406,94 +644,93 @@ function card6({ memeName, heroText, subText, ctaLines }) {
   return svgWrap(parts.join('\n'), extra);
 }
 
-// ── CARD COLLECTION — 유행어 컬렉션 (Style A/B/C 순환) ────────────────────────
-// 이 카드는 기존 디자인 유지 (유행어 컬렉션 전용)
+// ── CARD COLLECTION — 유행어 컬렉션 ─────────────────────────────────────────
+// 레퍼런스: 라이트그레이 배경 / 민트 뱃지 / 타이틀 / 사진그리드 / 다크pill / 흰박스
 function cardPhrase(num, { heroLines, summaryLines, bullets, badgeLabel }) {
-  const phraseText = heroLines?.[0]?.text || '';
-  const numStr = badgeLabel || String(num).padStart(2, '0');
-  const fs = clampFontSize(phraseText, 96, 920);
-  const heroCount = Math.min((heroLines || []).length || 1, 3);
-  const heroBlockH = heroCount * Math.floor(fs * 1.3);
-  const style = ['A', 'B', 'C'][(num - 1) % 3];
+  const tag = badgeLabel || '밈';
+  const FS = 76; // 타이틀 고정 크기
 
-  const BG = `<rect width="1080" height="1350" fill="#F1FAF8"/>`;
+  // ① 타이틀
+  const lines = (heroLines || []).slice(0, 2).filter(l => l?.text);
+  let tY = 160;
+  const titleSvg = lines.map(line => {
+    const baseline = tY + Math.floor(FS * 0.82);
+    tY += Math.floor(FS * 1.3);
+    return `<text x="60" y="${baseline}"
+      font-family="'Pretendard ExtraBold','Pretendard',sans-serif"
+      font-weight="800" font-size="${FS}" letter-spacing="-1"
+      fill="${line.color === '#3ECFB2' ? '#3ECFB2' : '#1A1A1A'}">${escXml(line.text)}</text>`;
+  }).join('\n');
+  const titleEndY = tY;
 
-  const phraseLeft = (yBase) =>
-    (heroLines || [{ text: phraseText, color: '#1A1A1A' }]).slice(0, 3).map((line, i) => {
-      const lfs = i === 0 ? fs : clampFontSize(line.text, Math.floor(fs * 0.88), 920);
-      const lH = Math.floor(lfs * 1.3);
-      return `<text x="60" y="${yBase + i * lH}"
+  // ② 사진 그리드 플레이스홀더 (직사각형, rx=0)
+  const PY = titleEndY + 36;
+  const PH = 520;
+  const CW = 462; const GAP = 24;
+  const sh = Math.floor((PH - GAP) / 2);
+  const photoSvg = `
+<rect x="60" y="${PY}" width="${CW}" height="${sh}" rx="0" fill="#D8D8D8"/>
+<rect x="60" y="${PY + sh + GAP}" width="${CW}" height="${sh}" rx="0" fill="#CCCCCC"/>
+<rect x="${60 + CW + GAP}" y="${PY}" width="${CW}" height="${PH}" rx="0" fill="#D2D2D2"/>`;
+  const afterPhoto = PY + PH;
+
+  // ③ 키포인트 pill (검정 박스 + 흰 글씨)
+  const pillText = bullets?.[0] || null;
+  const PILL_Y = afterPhoto + 28;
+  const pillSvg = pillText
+    ? `<rect x="60" y="${PILL_Y}" width="960" height="64" rx="0" fill="#1A1A1A"/>
+<text x="84" y="${PILL_Y + 42}"
+  font-family="'Pretendard ExtraBold','Pretendard',sans-serif"
+  font-weight="800" font-size="30" fill="white">${escXml(String(pillText))}</text>`
+    : '';
+  const afterPill = PILL_Y + (pillText ? 88 : 0);
+
+  // ④ 설명 박스 (테두리만, 채우기 없음, 직사각형, Pretendard)
+  const descLines = (summaryLines || []).slice(0, 3);
+  const remainBullets = (bullets || []).slice(1, 3);
+  const boxLineCount = descLines.length + remainBullets.length;
+  const BOX_H = Math.max(120, boxLineCount * 50 + 52);
+  const BOX_Y = afterPill + 8;
+  let by = BOX_Y + 44;
+  const boxContent = [
+    ...descLines.map(t =>
+      `<text x="84" y="${(by += 50) - 50}"
+        font-family="'Pretendard','sans-serif"
+        font-size="27" fill="#333333">${escXml(String(t))}</text>`),
+    ...remainBullets.map(t =>
+      `<text x="72" y="${(by += 54) - 54 + 36}"
         font-family="'Pretendard ExtraBold','Pretendard',sans-serif"
-        font-weight="800" font-size="${lfs}" letter-spacing="-2"
-        fill="${line.color || '#1A1A1A'}">${escXml(line.text)}</text>`;
-    }).join('\n');
+        font-weight="800" font-size="26" fill="#3ECFB2">✦</text>
+<text x="108" y="${by - 54 + 36}"
+  font-family="'Pretendard','sans-serif"
+  font-size="26" fill="#1A1A1A">${escXml(String(t))}</text>`),
+  ];
+  const boxSvg = `<rect x="60" y="${BOX_Y}" width="960" height="${BOX_H}" rx="0"
+  fill="none" stroke="#BBBBBB" stroke-width="1.5"/>
+${boxContent.join('\n')}`;
 
-  const phraseCenter = (yBase, baseFsOverride) => {
-    const bfs = baseFsOverride || fs;
-    return (heroLines || [{ text: phraseText, color: '#1A1A1A' }]).slice(0, 3).map((line, i) => {
-      const lfs = i === 0 ? bfs : clampFontSize(line.text, Math.floor(bfs * 0.88), 960);
-      const lH = Math.floor(lfs * 1.3);
-      return `<text x="540" y="${yBase + i * lH}"
-        font-family="'Pretendard ExtraBold','Pretendard',sans-serif"
-        font-weight="800" font-size="${lfs}" letter-spacing="-2"
-        fill="${line.color || '#1A1A1A'}" text-anchor="middle">${escXml(line.text)}</text>`;
-    }).join('\n');
-  };
+  // ⑤ 뱃지 너비 자동 계산 (글자 수 × 14 + 48)
+  const badgeW = Math.min(Math.max(tag.length * 18 + 48, 100), 300);
 
-  const whiteBox = (x, y, w, lines) => {
-    const h = Math.max(80, lines.length * 50 + 36);
-    return `<rect x="${x}" y="${y}" width="${w}" height="${h}" rx="16"
-      fill="white" stroke="#C8EDE3" stroke-width="1.5"/>
-    ${lines.map((t, i) => `<text x="${x + 32}" y="${y + 52 + i * 50}"
-      font-family="${i === 0
-        ? "'Pretendard ExtraBold','Pretendard',sans-serif\" font-weight=\"800\" font-size=\"28\" fill=\"#1A1A1A\""
-        : "'LeeSeoyun','Apple SD Gothic Neo',sans-serif\" font-size=\"24\" fill=\"#666666\""}">${escXml(t)}</text>`
-    ).join('\n')}`;
-  };
-
-  if (style === 'A') {
-    const PHRASE_Y = 230;
-    const bbY = Math.max(570, PHRASE_Y + heroBlockH + 60);
-    const bbLines = (summaryLines || []).slice(0, 2);
-    return svgWrap(`
-    ${BG}
-    ${bars()}
-    <text x="60" y="88" font-family="'LeeSeoyun','Apple SD Gothic Neo',sans-serif"
-      font-size="19" fill="#3ECFB2" letter-spacing="1">컬렉션 ${numStr}</text>
-    <rect x="60" y="98" width="64" height="2" fill="#3ECFB2" fill-opacity="0.5"/>
-    ${phraseLeft(PHRASE_Y)}
-    ${bbLines.length ? whiteBox(60, bbY, 960, bbLines) : ''}
-    ${footer()}`);
-  }
-
-  if (style === 'B') {
-    const PHRASE_Y = 230;
-    const bbY = Math.max(570, PHRASE_Y + heroBlockH + 60);
-    const bbLines = (summaryLines || []).slice(0, 2);
-    return svgWrap(`
-    ${BG}
-    ${bars()}
-    <text x="60" y="88" font-family="'LeeSeoyun','Apple SD Gothic Neo',sans-serif"
-      font-size="19" fill="#3ECFB2" letter-spacing="1">컬렉션 ${numStr}</text>
-    <rect x="60" y="98" width="64" height="2" fill="#3ECFB2" fill-opacity="0.5"/>
-    ${phraseLeft(PHRASE_Y)}
-    ${bbLines.length ? whiteBox(60, bbY, 960, bbLines) : ''}
-    ${footer()}`);
-  }
-
-  // Style C
-  const PHRASE_Y = 210;
-  const bbLines = (summaryLines || []).slice(0, 2);
-  const bbY = Math.max(560, PHRASE_Y + heroBlockH + 60);
   return svgWrap(`
-  ${BG}
-  ${bars()}
-  <text x="60" y="88" font-family="'LeeSeoyun','Apple SD Gothic Neo',sans-serif"
-    font-size="19" fill="#3ECFB2" letter-spacing="1">컬렉션 ${numStr}</text>
-  <rect x="60" y="98" width="64" height="2" fill="#3ECFB2" fill-opacity="0.5"/>
-  ${phraseLeft(PHRASE_Y)}
-  ${bbLines.length ? whiteBox(60, bbY, 960, bbLines) : ''}
-  ${footer()}`);
+<rect width="1080" height="1350" fill="#F2F2F2"/>
+<rect x="0" y="0" width="1080" height="6" fill="#3ECFB2"/>
+<rect x="0" y="1344" width="1080" height="6" fill="#3ECFB2"/>
+<rect x="60" y="56" width="${badgeW}" height="44" rx="8" fill="#3ECFB2"/>
+<text x="${60 + badgeW / 2}" y="84" text-anchor="middle"
+  font-family="'Pretendard ExtraBold','Pretendard',sans-serif"
+  font-weight="800" font-size="22" fill="white" letter-spacing="2">${escXml(tag)}</text>
+${titleSvg}
+${photoSvg}
+${pillSvg}
+${boxSvg}
+<text x="60" y="1240"
+  font-family="'LeeSeoyun','Apple SD Gothic Neo',sans-serif"
+  font-size="20" fill="#AAAAAA">출처 : @minjaja.pdf</text>
+<text x="1020" y="1310" text-anchor="end"
+  font-family="'LeeSeoyun','Apple SD Gothic Neo',sans-serif"
+  font-size="22" fill="#3ECFB2">@minjaja.pdf</text>
+  `);
 }
 
 // ── 공개 API ───────────────────────────────────────────────────────────────────
