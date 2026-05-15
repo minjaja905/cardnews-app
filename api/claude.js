@@ -1,4 +1,8 @@
-const ALLOWED_ORIGIN = process.env.ALLOWED_ORIGIN || 'https://cardnews-app-pi.vercel.app';
+const ALLOWED_ORIGINS = new Set([
+  process.env.ALLOWED_ORIGIN || 'https://cardnews-app-pi.vercel.app',
+  'http://localhost:5173',
+  'http://localhost:4173',
+]);
 const ALLOWED_MODEL = 'claude-sonnet-4-6';
 const MAX_TOKENS_LIMIT = 8192;
 
@@ -7,9 +11,9 @@ export default async function handler(req, res) {
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
-  // Origin 제한 — 배포 도메인 외 차단
+  // Origin 제한 — 허용 도메인 외 전부 차단 (빈 Origin 포함)
   const origin = req.headers.origin || '';
-  if (origin && origin !== ALLOWED_ORIGIN) {
+  if (!ALLOWED_ORIGINS.has(origin)) {
     return res.status(403).json({ error: 'Forbidden' });
   }
 
