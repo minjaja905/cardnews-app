@@ -10,7 +10,7 @@ export default function CardPreview({ svgString, cardNum, scale = 0.22, label })
     <div className="flex flex-col items-center gap-1">
       {/* 컨테이너: 정확한 축소 크기로 고정, overflow hidden */}
       <div
-        className="rounded-lg overflow-hidden shadow-sm border border-gray-100 bg-gray-50 flex-shrink-0"
+        className="rounded-lg overflow-hidden shadow-sm border border-gray-100 bg-[#1C2E29] flex-shrink-0"
         style={{ width: w, height: h, position: 'relative' }}
       >
         {svgString ? (

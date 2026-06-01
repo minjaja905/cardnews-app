@@ -329,12 +329,21 @@ ${footerDark()}`;
 }
 
 // ── 밈카드 공통: 배경 + 오버레이 ─────────────────────────────────────────────
-// bgImg 있으면 풀블리드 배경 + 다크 오버레이, 없으면 다크 플랫 배경
+// bgImg 있으면 풀블리드 배경 + 그라디언트 오버레이, 없으면 다크 플랫 배경
 function memeCardBg(bgImg) {
-  if (!bgImg) return `<rect width="1080" height="1350" fill="#1C2E29"/>`;
-  return `<image href="${bgImg}" x="0" y="0" width="1080" height="1350"
+  const darkBase = `<rect width="1080" height="1350" fill="#1A2820"/>`;
+  if (!bgImg) return darkBase;
+  return `${darkBase}
+<image href="${bgImg}" x="0" y="0" width="1080" height="1350"
     preserveAspectRatio="xMidYMid slice"/>
-<rect width="1080" height="1350" fill="black" fill-opacity="0.50"/>`;
+<defs>
+  <linearGradient id="memeOvG" x1="0" y1="0" x2="0" y2="1" gradientUnits="objectBoundingBox">
+    <stop offset="0%"   stop-color="#000" stop-opacity="0.08"/>
+    <stop offset="40%"  stop-color="#000" stop-opacity="0.35"/>
+    <stop offset="100%" stop-color="#000" stop-opacity="0.72"/>
+  </linearGradient>
+</defs>
+<rect width="1080" height="1350" fill="url(#memeOvG)"/>`;
 }
 
 // 커뮤니티 포스트 스타일 오버레이 카드
@@ -400,8 +409,6 @@ function card2({ heroLines, memoLines, descLines, summaryLines, sourceText, main
   // gray nav header
   parts.push(`<rect x="${CARD_X}" y="${CARD_Y}" width="${CARD_W}" height="${HEADER_H}" rx="0" fill="#F2F2F2"/>
 <text x="${CARD_X + 28}" y="${CARD_Y + 39}" font-family="sans-serif" font-size="26" fill="#999">‹</text>
-<text x="${CARD_X + CARD_W / 2}" y="${CARD_Y + 39}" text-anchor="middle"
-  font-family="'Pretendard ExtraBold','Pretendard',sans-serif" font-weight="800" font-size="21" fill="#1A1A1A">직장인 대나무숲</text>
 <text x="${CARD_X + CARD_W - 28}" y="${CARD_Y + 38}" text-anchor="end" font-family="sans-serif" font-size="22" fill="#999">☰</text>
 <rect x="${CARD_X}" y="${CARD_Y + HEADER_H}" width="${CARD_W}" height="1" fill="#E4E4E4"/>`);
 
@@ -437,7 +444,7 @@ function card2({ heroLines, memoLines, descLines, summaryLines, sourceText, main
   // caption label
   parts.push(`<text x="540" y="${Math.min(cardEndY + 44, 1220)}"
     font-family="'LeeSeoyun','Apple SD Gothic Neo',sans-serif"
-    font-size="20" fill="rgba(255,255,255,0.55)" text-anchor="middle">직장인 커뮤니티에 올라온 실</text>`);
+    font-size="20" fill="rgba(255,255,255,0.55)" text-anchor="middle">커뮤니티에 올라온 실제 반응</text>`);
 
   parts.push(footerDark());
   return svgWrap(parts.join('\n'));
@@ -509,32 +516,48 @@ function card3({ heroLines, subtitleLines, mintBoxLines, spreadImg1 }) {
   return svgWrap(parts.join('\n'));
 }
 
-// ── CARD 4 — 이럴 때 ──────────────────────────────────────────────────────────
-// params: heroLines, bullets (상황 4개), calloutLines[0]=마무리
-function card4({ heroLines, bullets, calloutLines, sideImg }) {
+// ── CARD 4 — 마케터 활용 팁 ──────────────────────────────────────────────────
+// params: heroLines, descText, reasonLines (2-3개), insightText
+function card4({ heroLines, descText, reasonLines, insightText, sideImg }) {
   const parts = [memeCardBg(sideImg), bars()];
 
   const hero = heroWithBadge(4, heroLines, 60);
   parts.push(hero.svg);
 
-  let y = hero.endY + 52;
+  let y = hero.endY + 32;
 
-  const bulletItems = (bullets || []).slice(0, 4);
-  bulletItems.forEach((text, i) => {
-    const rowY = y + i * 72;
-    const fs = clampFontSize(String(text), 28, 860);
-    parts.push(`<circle cx="84" cy="${rowY + 22}" r="11" fill="#3ECFB2"/>
-<text x="112" y="${rowY + 30}"
-  font-family="'Pretendard','sans-serif" font-size="${fs}" fill="#1A1A1A">${escXml(String(text))}</text>`);
+  // 설명 한 줄 (흰색, 작은)
+  if (descText) {
+    const wrapped = wrapText(String(descText), 900, 26);
+    wrapped.forEach((t, i) => {
+      parts.push(`<text x="540" y="${y + 28 + i * 40}"
+        font-family="'LeeSeoyun','Apple SD Gothic Neo',sans-serif"
+        font-size="26" fill="rgba(255,255,255,0.75)" text-anchor="middle">${escXml(t)}</text>`);
+    });
+    y += wrapped.length * 40 + 32;
+  }
+
+  // 이유/방법 rows — 번호(teal) + 텍스트(흰 배경 반투명)
+  const reasons = (reasonLines || []).slice(0, 3);
+  const BOX_W = 960, BOX_X = 60, NUM_W = 52, ROW_H = 76;
+  reasons.forEach((text, i) => {
+    const rowY = y + i * (ROW_H + 12);
+    const fs = clampFontSize(String(text), 27, BOX_W - NUM_W - 64);
+    parts.push(
+      `<rect x="${BOX_X}" y="${rowY}" width="${BOX_W}" height="${ROW_H}" rx="0" fill="white" fill-opacity="0.12"/>` +
+      `<rect x="${BOX_X}" y="${rowY}" width="${NUM_W}" height="${ROW_H}" rx="0" fill="#3ECFB2" fill-opacity="0.75"/>` +
+      `<text x="${BOX_X + NUM_W / 2}" y="${rowY + 48}" text-anchor="middle"` +
+      ` font-family="'Pretendard ExtraBold','Pretendard',sans-serif" font-weight="800" font-size="28" fill="white">${i + 1}</text>` +
+      `<text x="${BOX_X + NUM_W + 22}" y="${rowY + 48}"` +
+      ` font-family="'LeeSeoyun','Apple SD Gothic Neo',sans-serif" font-size="${fs}" fill="white">${escXml(String(text))}</text>`
+    );
   });
 
-  const afterBullets = y + bulletItems.length * 72 + 20;
+  const afterReasons = y + reasons.length * (ROW_H + 12);
 
-  // 마무리 큰 teal 텍스트
-  const closingText = calloutLines?.[0] || null;
-  if (closingText) {
-    parts.push(divider(afterBullets + 28));
-    parts.push(tealBigText(closingText, Math.max(afterBullets + 110, 1100)));
+  if (insightText) {
+    parts.push(divider(Math.max(afterReasons + 28, 1060)));
+    parts.push(tealBigText(insightText, Math.max(afterReasons + 120, 1170)));
   }
 
   parts.push(footerDark());
@@ -645,10 +668,12 @@ function card6({ memeName, heroText, subText, ctaLines }) {
 }
 
 // ── CARD COLLECTION — 유행어 컬렉션 ─────────────────────────────────────────
-// 레퍼런스: 라이트그레이 배경 / 민트 뱃지 / 타이틀 / 사진그리드 / 다크pill / 흰박스
-function cardPhrase(num, { heroLines, summaryLines, bullets, badgeLabel }) {
+// bgImg 있으면 dark 배경 + 흰 텍스트, 없으면 라이트그레이 + 다크 텍스트
+function cardPhrase(num, { heroLines, summaryLines, bullets, badgeLabel, bgImg }) {
+  const hasBg = Boolean(bgImg);
   const tag = badgeLabel || '밈';
-  const FS = 76; // 타이틀 고정 크기
+  const FS = 76;
+  const titleColor = hasBg ? 'white' : '#1A1A1A';
 
   // ① 타이틀
   const lines = (heroLines || []).slice(0, 2).filter(l => l?.text);
@@ -659,7 +684,7 @@ function cardPhrase(num, { heroLines, summaryLines, bullets, badgeLabel }) {
     return `<text x="60" y="${baseline}"
       font-family="'Pretendard ExtraBold','Pretendard',sans-serif"
       font-weight="800" font-size="${FS}" letter-spacing="-1"
-      fill="${line.color === '#3ECFB2' ? '#3ECFB2' : '#1A1A1A'}">${escXml(line.text)}</text>`;
+      fill="${line.color === '#3ECFB2' ? '#3ECFB2' : titleColor}">${escXml(line.text)}</text>`;
   }).join('\n');
   const titleEndY = tY;
 
@@ -668,10 +693,13 @@ function cardPhrase(num, { heroLines, summaryLines, bullets, badgeLabel }) {
   const PH = 520;
   const CW = 462; const GAP = 24;
   const sh = Math.floor((PH - GAP) / 2);
+  const phFill = hasBg ? 'rgba(255,255,255,0.10)' : '#D8D8D8';
+  const phFill2 = hasBg ? 'rgba(255,255,255,0.07)' : '#CCCCCC';
+  const phFill3 = hasBg ? 'rgba(255,255,255,0.10)' : '#D2D2D2';
   const photoSvg = `
-<rect x="60" y="${PY}" width="${CW}" height="${sh}" rx="0" fill="#D8D8D8"/>
-<rect x="60" y="${PY + sh + GAP}" width="${CW}" height="${sh}" rx="0" fill="#CCCCCC"/>
-<rect x="${60 + CW + GAP}" y="${PY}" width="${CW}" height="${PH}" rx="0" fill="#D2D2D2"/>`;
+<rect x="60" y="${PY}" width="${CW}" height="${sh}" rx="0" fill="${phFill}"/>
+<rect x="60" y="${PY + sh + GAP}" width="${CW}" height="${sh}" rx="0" fill="${phFill2}"/>
+<rect x="${60 + CW + GAP}" y="${PY}" width="${CW}" height="${PH}" rx="0" fill="${phFill3}"/>`;
   const afterPhoto = PY + PH;
 
   // ③ 키포인트 pill (검정 박스 + 흰 글씨)
@@ -685,35 +713,42 @@ function cardPhrase(num, { heroLines, summaryLines, bullets, badgeLabel }) {
     : '';
   const afterPill = PILL_Y + (pillText ? 88 : 0);
 
-  // ④ 설명 박스 (테두리만, 채우기 없음, 직사각형, Pretendard)
+  // ④ 설명 박스
   const descLines = (summaryLines || []).slice(0, 3);
   const remainBullets = (bullets || []).slice(1, 3);
   const boxLineCount = descLines.length + remainBullets.length;
   const BOX_H = Math.max(120, boxLineCount * 50 + 52);
   const BOX_Y = afterPill + 8;
   let by = BOX_Y + 44;
+  const descTextColor = hasBg ? 'rgba(255,255,255,0.9)' : '#333333';
+  const bulletTextColor = hasBg ? 'white' : '#1A1A1A';
   const boxContent = [
     ...descLines.map(t =>
       `<text x="84" y="${(by += 50) - 50}"
         font-family="'Pretendard','sans-serif"
-        font-size="27" fill="#333333">${escXml(String(t))}</text>`),
+        font-size="27" fill="${descTextColor}">${escXml(String(t))}</text>`),
     ...remainBullets.map(t =>
       `<text x="72" y="${(by += 54) - 54 + 36}"
         font-family="'Pretendard ExtraBold','Pretendard',sans-serif"
         font-weight="800" font-size="26" fill="#3ECFB2">✦</text>
 <text x="108" y="${by - 54 + 36}"
   font-family="'Pretendard','sans-serif"
-  font-size="26" fill="#1A1A1A">${escXml(String(t))}</text>`),
+  font-size="26" fill="${bulletTextColor}">${escXml(String(t))}</text>`),
   ];
+  const boxFill = hasBg ? 'rgba(255,255,255,0.12)' : 'none';
+  const boxStroke = hasBg ? 'none' : '#BBBBBB';
   const boxSvg = `<rect x="60" y="${BOX_Y}" width="960" height="${BOX_H}" rx="0"
-  fill="none" stroke="#BBBBBB" stroke-width="1.5"/>
+  fill="${boxFill}" stroke="${boxStroke}" stroke-width="1.5"/>
 ${boxContent.join('\n')}`;
 
-  // ⑤ 뱃지 너비 자동 계산 (글자 수 × 14 + 48)
+  // ⑤ 뱃지 너비 자동 계산
   const badgeW = Math.min(Math.max(tag.length * 18 + 48, 100), 300);
+  const bgLayer = hasBg ? memeCardBg(bgImg) : '';
+  const footerColor = '#3ECFB2';
+  const footerSubColor = hasBg ? 'rgba(255,255,255,0.45)' : 'rgba(0,0,0,0.4)';
 
   return svgWrap(`
-<rect width="1080" height="1350" fill="#F2F2F2"/>
+${bgLayer}
 <rect x="0" y="0" width="1080" height="6" fill="#3ECFB2"/>
 <rect x="0" y="1344" width="1080" height="6" fill="#3ECFB2"/>
 <rect x="60" y="56" width="${badgeW}" height="44" rx="8" fill="#3ECFB2"/>
@@ -724,12 +759,12 @@ ${titleSvg}
 ${photoSvg}
 ${pillSvg}
 ${boxSvg}
-<text x="60" y="1240"
+<text x="540" y="1272"
   font-family="'LeeSeoyun','Apple SD Gothic Neo',sans-serif"
-  font-size="20" fill="#AAAAAA">출처 : @minjaja.pdf</text>
-<text x="1020" y="1310" text-anchor="end"
+  font-size="26" fill="${footerColor}" text-anchor="middle">@minjaja.pdf</text>
+<text x="540" y="1304"
   font-family="'LeeSeoyun','Apple SD Gothic Neo',sans-serif"
-  font-size="22" fill="#3ECFB2">@minjaja.pdf</text>
+  font-size="18" fill="${footerSubColor}" text-anchor="middle">Content Marketer · Meme Curator</text>
   `);
 }
 
@@ -785,19 +820,18 @@ export function makeDefaultParams(memeName = '', volNum = 1, date = '') {
     },
     card4: {
       heroLines: [
-        { text: '이럴 때', color: '#1A1A1A' },
-        { text: '써보세요.', color: '#3ECFB2' },
+        { text: '마케터가 이 밈을', color: '#1A1A1A' },
+        { text: '주목해야 할 이유', color: '#3ECFB2' },
       ],
-      captionRight: '',
-      bullets: [],
-      calloutLines: [],
+      descText: '',
+      reasonLines: [],
+      insightText: '',
       sideImg: null,
     },
     card5: {
       heroLines: [
-        { text: '브랜드에서', color: '#1A1A1A' },
-        { text: '이렇게', color: '#1A1A1A' },
-        { text: '써보세요.', color: '#3ECFB2' },
+        { text: '마케터라면', color: '#1A1A1A' },
+        { text: '이렇게 활용해요', color: '#3ECFB2' },
       ],
       centerImg: null,
       leftCaption: [],

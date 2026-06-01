@@ -50,6 +50,13 @@ const CardEditor = memo(function CardEditor({ n, params, onUpdate, coverImage, o
   // 유행어 컬렉션 모드: 카드 2~7 전용 편집 UI
   if (phraseMode && n >= 2) return (
     <div className="flex flex-col gap-4">
+      <Field label="배경 이미지 (선택)">
+        <ImageUploader
+          value={coverImage || null}
+          onChange={onCoverImageChange}
+          primaryColor={primaryColor}
+        />
+      </Field>
       <Field label="유행어 텍스트">
         <HeroLineEditor lines={p.heroLines || []} onChange={v => onUpdate(key, 'heroLines', v)} />
       </Field>
@@ -142,14 +149,14 @@ const CardEditor = memo(function CardEditor({ n, params, onUpdate, coverImage, o
       <Field label="히어로 텍스트">
         <HeroLineEditor lines={p.heroLines || []} onChange={v => onUpdate(key, 'heroLines', v)} />
       </Field>
-      <Field label="오른쪽 캡션">
-        <Inp value={p.captionRight || ''} onChange={e => onUpdate(key, 'captionRight', e.target.value)} />
+      <Field label="설명 한 줄">
+        <Inp value={p.descText || ''} onChange={e => onUpdate(key, 'descText', e.target.value)} placeholder="이 밈이 마케팅에 유용한 이유 한 줄" />
       </Field>
-      <Field label="상황 bullet (이모지 포함, 4개)">
-        <TextListEditor lines={p.bullets || []} onChange={v => onUpdate(key, 'bullets', v)} placeholder="🍊 상황" maxLines={4} />
+      <Field label="활용법/이유 (3개)">
+        <TextListEditor lines={p.reasonLines || []} onChange={v => onUpdate(key, 'reasonLines', v)} placeholder="활용법 또는 주목 이유" maxLines={3} />
       </Field>
-      <Field label="브랜드 callout">
-        <TextListEditor lines={p.calloutLines || []} onChange={v => onUpdate(key, 'calloutLines', v)} placeholder="callout" maxLines={3} />
+      <Field label="핵심 인사이트 (하단 teal)">
+        <Inp value={p.insightText || ''} onChange={e => onUpdate(key, 'insightText', e.target.value)} placeholder="밈 활용 타이밍 또는 핵심 액션" />
       </Field>
     </div>
   );
@@ -219,12 +226,12 @@ export default function MemeWizard() {
   function buildCardParams(n) {
     const base = { memeName: topic, volNum: Number(volNum) || 1, date };
     const p = params?.[`card${n}`] || {};
-    if (n === 1) return { ...base, ...p, coverImg: coverType === 'photo' ? images.cover : null };
+    if (n === 1) return { ...base, ...p, coverImg: images.cover || null };
+    if (phraseMode && n >= 2) return { ...base, ...p, bgImg: images[`phrase_${n}`] || null };
     if (n === 2) return { ...base, ...p, mainImg: images.origin };
     if (n === 3) return { ...base, ...p, spreadImg1: images.spread1, spreadImg2: images.spread2 };
     if (n === 4) return { ...base, ...p, sideImg: images.side };
     if (n === 5) return { ...base, ...p, centerImg: images.center };
-    // 추가 카드 (7+): extra_N 이미지 지원
     return { ...base, ...p, coverImg: images[`extra_${n}`] };
   }
 
@@ -305,17 +312,22 @@ export default function MemeWizard() {
 
   // ── 이미지 패널 — 모든 카드 지원 ─────────────────────────────────────────────
   function ImagesPanel() {
-    const imageSlots = [
-      { key: 'origin',  label: '카드 2 — 유래 스크린샷' },
-      { key: 'spread1', label: '카드 3 — 확산 이미지 (좌)' },
-      { key: 'spread2', label: '카드 3 — 확산 이미지 (우)' },
-      { key: 'side',    label: '카드 4 — 이럴 때 우측' },
-      { key: 'center',  label: '카드 5 — 브랜드 중앙' },
-      ...Array.from({ length: Math.max(0, cardCount - 6) }, (_, i) => ({
-        key: `extra_${i + 7}`,
-        label: `카드 ${i + 7} — 추가 이미지`,
-      })),
-    ];
+    const imageSlots = phraseMode
+      ? Array.from({ length: cardCount - 1 }, (_, i) => ({
+          key: `phrase_${i + 2}`,
+          label: `카드 ${i + 2} — 배경 이미지 (누끼 가능)`,
+        }))
+      : [
+          { key: 'origin',  label: '카드 2 — 유래 스크린샷' },
+          { key: 'spread1', label: '카드 3 — 확산 이미지 (좌)' },
+          { key: 'spread2', label: '카드 3 — 확산 이미지 (우)' },
+          { key: 'side',    label: '카드 4 — 마케터 팁 배경' },
+          { key: 'center',  label: '카드 5 — 브랜드 중앙' },
+          ...Array.from({ length: Math.max(0, cardCount - 6) }, (_, i) => ({
+            key: `extra_${i + 7}`,
+            label: `카드 ${i + 7} — 추가 이미지`,
+          })),
+        ];
     return (
       <div className="flex flex-col gap-4">
         <div className="text-xs text-gray-400 bg-amber-50 border border-amber-100 px-3 py-2 rounded-xl">
@@ -637,8 +649,17 @@ export default function MemeWizard() {
                         n={activeCard}
                         params={params}
                         onUpdate={setCardParam}
-                        coverImage={activeCard === 2 ? images.origin : images.cover}
-                        onCoverImageChange={(v) => setImage(activeCard === 2 ? 'origin' : 'cover', v)}
+                        coverImage={
+                          phraseMode && activeCard >= 2
+                            ? images[`phrase_${activeCard}`]
+                            : activeCard === 2 ? images.origin : images.cover
+                        }
+                        onCoverImageChange={(v) => setImage(
+                          phraseMode && activeCard >= 2
+                            ? `phrase_${activeCard}`
+                            : activeCard === 2 ? 'origin' : 'cover',
+                          v
+                        )}
                         primaryColor={primary}
                         phraseMode={phraseMode}
                       />
