@@ -42,20 +42,17 @@ export async function downloadOne({ svgString, filename, format }) {
 }
 
 // ── 전체 ZIP 다운로드 ─────────────────────────────────────────────────────────
-export async function downloadZip({ svgs, labels, slug, format }) {
+export async function downloadZip({ svgs, filenames, slug, format }) {
   const zip = new JSZip();
 
   if (format === 'png') {
-    // PNG 변환은 순차 처리 (canvas 동시 생성 제한)
     for (let i = 0; i < svgs.length; i++) {
       const pngBlob = await svgToPngBlob(svgs[i]);
-      const label = (labels[i] || `card${i + 1}`).replace(/[^\w가-힣]/g, '_');
-      zip.file(`${i + 1}_${label}.png`, pngBlob);
+      zip.file(`${filenames[i]}.png`, pngBlob);
     }
   } else {
     svgs.forEach((svg, i) => {
-      const label = (labels[i] || `card${i + 1}`).replace(/[^\w가-힣]/g, '_');
-      zip.file(`${i + 1}_${label}.svg`, svg);
+      zip.file(`${filenames[i]}.svg`, svg);
     });
   }
 

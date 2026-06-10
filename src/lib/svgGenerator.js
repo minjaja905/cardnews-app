@@ -329,12 +329,10 @@ ${footerDark()}`;
 }
 
 // ── 밈카드 공통: 배경 + 오버레이 ─────────────────────────────────────────────
-// bgImg 있으면 풀블리드 배경 + 그라디언트 오버레이, 없으면 다크 플랫 배경
+// bgImg 있으면 풀블리드 이미지 + 그라디언트 오버레이, 없으면 투명 (배경 없음)
 function memeCardBg(bgImg) {
-  const darkBase = `<rect width="1080" height="1350" fill="#1A2820"/>`;
-  if (!bgImg) return darkBase;
-  return `${darkBase}
-<image href="${bgImg}" x="0" y="0" width="1080" height="1350"
+  if (!bgImg) return '';
+  return `<image href="${bgImg}" x="0" y="0" width="1080" height="1350"
     preserveAspectRatio="xMidYMid slice"/>
 <defs>
   <linearGradient id="memeOvG" x1="0" y1="0" x2="0" y2="1" gradientUnits="objectBoundingBox">
@@ -379,72 +377,64 @@ ${sourceSvg}`,
 }
 
 // ── CARD 2 — 유래 ─────────────────────────────────────────────────────────────
-// 레퍼런스: 사진 bg + 다크 오버레이 / 흰색 원 배지 중앙 상단
-// / 흰색 히어로 텍스트 중앙 / 커뮤니티 포스트 카드 오버레이 (직장인 대나무숲 스타일)
+// 레이아웃: 투명 배경 / 배지+히어로 / 사진 영역 / 설명 박스 / 출처 / 하단 teal
 function card2({ heroLines, memoLines, descLines, summaryLines, sourceText, mainImg }) {
-  const parts = [memeCardBg(mainImg), bars()];
+  const parts = [bars()];
 
   const hero = heroWithBadge(2, heroLines, 50);
   parts.push(hero.svg);
 
-  // 커뮤니티 포스트 카드 UI
-  const CARD_X = 70, CARD_W = 940, CARD_Y = Math.max(hero.endY + 36, 460);
-  const HEADER_H = 60, CONTENT_FS = 23, COMMENT_FS = 23, LH = 38, CLH = 34;
+  // 사진 영역 — 히어로 아래 전체 너비
+  const PHOTO_X = 60, PHOTO_W = 960;
+  const photoY = Math.max(hero.endY + 24, 300);
+  const photoH = hero.endY > 420 ? 380 : 440;
+  const clipId = 'c2Photo';
 
-  const postLines = (memoLines?.length ? memoLines : summaryLines || []);
-  const commentLines = (descLines || []);
+  if (mainImg) {
+    parts.push(
+      `<image href="${mainImg}" x="${PHOTO_X}" y="${photoY}" width="${PHOTO_W}" height="${photoH}"
+        preserveAspectRatio="xMidYMid slice" clip-path="url(#${clipId})"/>`,
+      `<clipPath id="${clipId}">
+        <rect x="${PHOTO_X}" y="${photoY}" width="${PHOTO_W}" height="${photoH}" rx="0"/>
+      </clipPath>`
+    );
+  } else {
+    parts.push(
+      `<rect x="${PHOTO_X}" y="${photoY}" width="${PHOTO_W}" height="${photoH}" rx="0"
+        fill="rgba(255,255,255,0.05)" stroke="rgba(255,255,255,0.12)" stroke-width="1.5" stroke-dasharray="8 5"/>`,
+      `<text x="540" y="${photoY + Math.floor(photoH / 2) - 16}" text-anchor="middle"
+        font-family="sans-serif" font-size="44" fill="rgba(255,255,255,0.18)">📷</text>`,
+      `<text x="540" y="${photoY + Math.floor(photoH / 2) + 26}" text-anchor="middle"
+        font-family="'LeeSeoyun','Apple SD Gothic Neo',sans-serif"
+        font-size="22" fill="rgba(255,255,255,0.2)">밈 사진 추가</text>`
+    );
+  }
 
-  const postWrapped = postLines.flatMap(t => wrapText(String(t), CARD_W - 56, CONTENT_FS));
-  const commentWrapped = commentLines.flatMap(t => wrapText(String(t), CARD_W - 72, COMMENT_FS));
+  let y = photoY + photoH + 28;
 
-  const postH = postWrapped.length * LH + 52;
-  const sep2H = commentWrapped.length > 0 ? 1 : 0;
-  const commentH = commentWrapped.length * CLH + (commentWrapped.length > 0 ? 40 : 0);
-  const srcH = sourceText ? 36 : 0;
-  const CARD_H = HEADER_H + postH + sep2H + commentH + srcH;
+  // descLines — 흰색 반투명 설명 박스
+  const dLines = descLines || [];
+  if (dLines.length > 0) {
+    const box = whiteBlock(dLines, y, { fontSize: 24, lineH: 40 });
+    parts.push(box.svg);
+    y = box.endY + 16;
+  }
 
-  // card background + shadow — 직사각형
-  parts.push(`<rect x="${CARD_X}" y="${CARD_Y}" width="${CARD_W}" height="${CARD_H}" rx="0" fill="white" filter="url(#shadow)"/>`);
-
-  // gray nav header
-  parts.push(`<rect x="${CARD_X}" y="${CARD_Y}" width="${CARD_W}" height="${HEADER_H}" rx="0" fill="#F2F2F2"/>
-<text x="${CARD_X + 28}" y="${CARD_Y + 39}" font-family="sans-serif" font-size="26" fill="#999">‹</text>
-<text x="${CARD_X + CARD_W - 28}" y="${CARD_Y + 38}" text-anchor="end" font-family="sans-serif" font-size="22" fill="#999">☰</text>
-<rect x="${CARD_X}" y="${CARD_Y + HEADER_H}" width="${CARD_W}" height="1" fill="#E4E4E4"/>`);
-
-  // post body text
-  let ty = CARD_Y + HEADER_H + 34;
-  postWrapped.forEach(t => {
-    parts.push(`<text x="${CARD_X + 28}" y="${ty}"
-      font-family="'LeeSeoyun','Apple SD Gothic Neo',sans-serif" font-size="${CONTENT_FS}" fill="#1A1A1A">${escXml(t)}</text>`);
-    ty += LH;
-  });
-
-  // source / timestamp row
+  // 출처 소자
   if (sourceText) {
-    parts.push(`<text x="${CARD_X + 28}" y="${ty + 14}"
-      font-family="'Pretendard','sans-serif" font-size="19" fill="#BBBBBB">${escXml(sourceText)}</text>`);
-    ty += 36;
+    parts.push(
+      `<text x="88" y="${y + 22}"
+        font-family="'LeeSeoyun','Apple SD Gothic Neo',sans-serif"
+        font-size="19" fill="rgba(255,255,255,0.35)">출처: ${escXml(sourceText)}</text>`
+    );
+    y += 38;
   }
 
-  // separator + comments
-  if (commentWrapped.length > 0) {
-    const sepY2 = CARD_Y + HEADER_H + postH + srcH;
-    parts.push(`<rect x="${CARD_X}" y="${sepY2}" width="${CARD_W}" height="1" fill="#EFEFEF"/>`);
-    let cy2 = sepY2 + 30;
-    commentWrapped.forEach(t => {
-      parts.push(`<text x="${CARD_X + 44}" y="${cy2}"
-        font-family="'LeeSeoyun','Apple SD Gothic Neo',sans-serif" font-size="${COMMENT_FS}" fill="#555555">${escXml(t)}</text>`);
-      cy2 += CLH;
-    });
+  // 하단 teal 요약 — summaryLines[0] 우선, 없으면 memoLines[0]
+  const tealText = summaryLines?.[0] || memoLines?.[0] || '';
+  if (tealText) {
+    parts.push(tealBigText(tealText, Math.max(y + 56, 1155)));
   }
-
-  const cardEndY = CARD_Y + CARD_H;
-
-  // caption label
-  parts.push(`<text x="540" y="${Math.min(cardEndY + 44, 1220)}"
-    font-family="'LeeSeoyun','Apple SD Gothic Neo',sans-serif"
-    font-size="20" fill="rgba(255,255,255,0.55)" text-anchor="middle">커뮤니티에 올라온 실제 반응</text>`);
 
   parts.push(footerDark());
   return svgWrap(parts.join('\n'));
@@ -801,9 +791,10 @@ export function makeDefaultParams(memeName = '', volNum = 1, date = '') {
         { text: '이 밈의', color: '#1A1A1A' },
         { text: '정체는?', color: '#3ECFB2' },
       ],
-      leftBoxLines: [],
-      rightBoxLines: [],
+      memoLines: [],
+      descLines: [],
       summaryLines: [],
+      sourceText: '',
       mainImg: null,
     },
     card3: {

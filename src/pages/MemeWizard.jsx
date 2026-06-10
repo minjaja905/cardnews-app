@@ -114,14 +114,18 @@ const CardEditor = memo(function CardEditor({ n, params, onUpdate, coverImage, o
       <Field label="히어로 텍스트">
         <HeroLineEditor lines={p.heroLines || []} onChange={v => onUpdate(key, 'heroLines', v)} />
       </Field>
-      <Field label="좌측 텍스트 박스">
-        <TextListEditor lines={p.leftBoxLines || []} onChange={v => onUpdate(key, 'leftBoxLines', v)} placeholder="텍스트" maxLines={4} />
+      <Field label="유래 설명 (2-3줄)">
+        <TextListEditor lines={p.descLines || []} onChange={v => onUpdate(key, 'descLines', v)} placeholder="유래 설명" maxLines={3} />
       </Field>
-      <Field label="우측 텍스트 박스">
-        <TextListEditor lines={p.rightBoxLines || []} onChange={v => onUpdate(key, 'rightBoxLines', v)} placeholder="텍스트" maxLines={4} />
+      <Field label="출처">
+        <Inp value={p.sourceText || ''} onChange={e => onUpdate(key, 'sourceText', e.target.value)} placeholder="예: 트위터 @xxx / 유튜브 댓글" />
       </Field>
-      <Field label="하단 요약 박스">
-        <TextListEditor lines={p.summaryLines || []} onChange={v => onUpdate(key, 'summaryLines', v)} placeholder="요약" maxLines={4} />
+      <Field label="하단 teal 한 줄 (선택)">
+        <Inp
+          value={p.summaryLines?.[0] || ''}
+          onChange={e => onUpdate(key, 'summaryLines', e.target.value ? [e.target.value] : [])}
+          placeholder="핵심 요약 한 줄"
+        />
       </Field>
     </div>
   );
@@ -318,7 +322,7 @@ export default function MemeWizard() {
           label: `카드 ${i + 2} — 배경 이미지 (누끼 가능)`,
         }))
       : [
-          { key: 'origin',  label: '카드 2 — 유래 스크린샷' },
+          { key: 'origin',  label: '카드 2 — 밈 사진' },
           { key: 'spread1', label: '카드 3 — 확산 이미지 (좌)' },
           { key: 'spread2', label: '카드 3 — 확산 이미지 (우)' },
           { key: 'side',    label: '카드 4 — 마케터 팁 배경' },
@@ -346,6 +350,14 @@ export default function MemeWizard() {
     );
   }
 
+  // ── 파일명 생성 — vol{번호}_{제목}_{페이지} ───────────────────────────────────
+  function makeFilename(n) {
+    const safeVol = String(volNum || '1').padStart(2, '0');
+    const safeTopic = (topic || 'cardnews').replace(/[^\w가-힣]/g, '_').replace(/_+/g, '_').replace(/^_|_$/g, '');
+    const safePage = String(n).padStart(2, '0');
+    return `vol${safeVol}_${safeTopic}_${safePage}`;
+  }
+
   // ── 다운로드 ──────────────────────────────────────────────────────────────────
   async function handleDownloadAll() {
     setExportLoading(true);
@@ -353,7 +365,7 @@ export default function MemeWizard() {
       const slug = `김밈지_${(topic || 'cardnews').replace(/\s+/g, '_')}_vol${String(volNum || '').padStart(2, '0')}`;
       await downloadZip({
         svgs: cardNums.map((n) => svgs[n] || ''),
-        labels: cardNums.map(getLabel),
+        filenames: cardNums.map(makeFilename),
         slug,
         format: exportFormat,
       });
@@ -366,7 +378,7 @@ export default function MemeWizard() {
 
   async function handleDownloadOne(n) {
     try {
-      await downloadOne({ svgString: svgs[n] || '', filename: `${n}_${getLabel(n, phraseMode)}.svg`, format: exportFormat });
+      await downloadOne({ svgString: svgs[n] || '', filename: `${makeFilename(n)}.svg`, format: exportFormat });
     } catch (e) {
       alert('다운로드 실패: ' + e.message);
     }

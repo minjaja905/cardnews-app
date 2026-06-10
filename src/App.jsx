@@ -12,12 +12,12 @@ function Footer() {
       <span>© 2026 MJ</span>
       <span>·</span>
       <a
-        href="https://instagram.com/minjaja.pdf"
+        href="https://www.instagram.com/minday8910/"
         target="_blank"
         rel="noopener noreferrer"
         className="hover:text-gray-500 transition-colors"
       >
-        @minjaja.pdf
+        @minday8910
       </a>
     </footer>
   );
